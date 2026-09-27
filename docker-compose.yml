@@ -1,0 +1,36 @@
+# Local stack: PostgreSQL + the DevInsight image (API + SPA) on http://localhost:8080.
+#   cp .env.example .env   # fill in the GitHub OAuth app credentials
+#   docker compose up --build
+# For day-to-day development run only the database (`docker compose up db`) and use
+# `dotnet run` + `npm start` instead — see README.md.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: devinsight
+      POSTGRES_USER: devinsight
+      POSTGRES_PASSWORD: devinsight
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devinsight -d devinsight"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      ConnectionStrings__DevInsight: Host=db;Port=5432;Database=devinsight;Username=devinsight;Password=devinsight
+      GitHub__CallbackUrl: http://localhost:8080/api/auth/github/callback
+
+volumes:
+  pgdata:
