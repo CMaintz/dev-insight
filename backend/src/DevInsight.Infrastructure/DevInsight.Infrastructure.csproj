@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Adapters behind the application's ports: PostgreSQL, GitHub, git, AI, background work. -->
+  <ItemGroup>
+    <ProjectReference Include="..\DevInsight.Application\DevInsight.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+    <PackageReference Include="Octokit" />
+    <PackageReference Include="Anthropic" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DevInsight.Api.Tests" />
+    <InternalsVisibleTo Include="DevInsight.Infrastructure.Tests" />
+  </ItemGroup>
+</Project>
