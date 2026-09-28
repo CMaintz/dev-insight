@@ -20,8 +20,6 @@ dist/
 .angular/
 *.tsbuildinfo
 
-# --- Java (legacy skeleton, tagged java-skeleton) ---
-target/
 
 # --- Secrets / local env ---
 .env

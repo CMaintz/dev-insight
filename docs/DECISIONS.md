@@ -12,9 +12,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 1. ⚙️ **Rewrite on a branch, Java preserved by tag.** Work is on `feat/dotnet-rewrite`; the Spring Boot
    skeleton is tagged `java-skeleton` (local tag, not pushed). *Alt:* new repository. *Why:* history shows the pivot.
-2. ⚠️ **Java sources are still in the tree** (`src/`, `pom.xml`). Deleting them was blocked by the
-   auto-mode safety classifier, so they sit next to `backend/`. **Action:** confirm and I (or you) run
-   `git rm -r src pom.xml`. The Docker build ignores them.
+2. ⚙️ **Java sources removed** (`src/`, `pom.xml`) on your go-ahead; recoverable from the `java-skeleton` tag.
 3. ⚙️ **Local commits only — nothing pushed, no PR opened.** Pushing/PR creation is outward-facing, so it waits for you.
 4. ⚙️ **Brainstorming folder left untracked.** `additional-brainstorming-and-context/` holds 8 .docx files
    (5 near-duplicates). I read them all: the *Master Specification* already consolidates the other 7, and
