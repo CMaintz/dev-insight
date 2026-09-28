@@ -1,6 +1,7 @@
 using DevInsight.Application.Abstractions;
 using DevInsight.Application.Dashboard;
 using DevInsight.Application.Portfolio;
+using DevInsight.Application.Repositories;
 using DevInsight.Domain.Analyses;
 using DevInsight.Domain.Projects;
 using DevInsight.Domain.Repositories;
@@ -12,6 +13,8 @@ internal static class Mapping
 {
     public static ProfileDto ToDto(this User u) =>
         new(u.Id, u.Login, u.Name, u.Email, u.AvatarUrl, u.Bio, u.LinkedInUrl, u.IsPortfolioPublic, $"/u/{u.Login}");
+
+    public static ImportSummaryDto ToDto(this ImportSummary s) => new(s.Imported, s.Updated, s.Total);
 
     public static RepositoryDto ToDto(this Repository r) =>
         new(r.Id, r.Name, r.FullName, r.Description, r.HtmlUrl, r.PrimaryLanguage, r.Stars, r.Forks,

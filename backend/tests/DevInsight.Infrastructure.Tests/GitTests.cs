@@ -9,7 +9,7 @@ namespace DevInsight.Infrastructure.Tests;
 public class GitLogParserTests
 {
     [Fact]
-    public void Parses_commits_numstat_and_merges()
+    public void Parses_git_log_records()
     {
         const string log =
             "\u001eaaa\u001fAda\u001fADA@Example.com\u001f2026-09-01T10:00:00+02:00\u001f\u001ffeat: first\n\n"
@@ -36,26 +36,40 @@ public sealed class GitSnapshotSourceTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "devinsight-tests", Guid.NewGuid().ToString("N"));
 
-    [Fact]
-    public async Task Captures_history_and_head_files_then_cleans_up()
-    {
-        var origin = Path.Combine(_root, "octo", "demo.git");
-        CreateRepository(origin);
-        var work = Path.Combine(_root, "work");
-        var source = new GitSnapshotSource(
-            Options.Create(new GitAnalysisOptions { CloneBaseUrl = new Uri(_root).AbsoluteUri, WorkRoot = work }),
-            NullLogger<GitSnapshotSource>.Instance);
-        var repository = Repository.Import(Guid.NewGuid(), "octo",
-            new GitHubRepositoryInfo(1, "octo", "demo", null, "https://github.com/octo/demo", "C#", 0, 0, false, false, false, "main", 1, null), DateTimeOffset.UtcNow);
+    private string WorkRoot => Path.Combine(_root, "work");
 
-        var snapshot = await source.CaptureAsync(repository, "unused-token", TestContext.Current.CancellationToken);
+    [Fact]
+    public async Task Captures_commit_history_with_line_stats()
+    {
+        var snapshot = await CaptureDemoRepositoryAsync();
 
         snapshot.HeadCommitSha.ShouldNotBeNullOrWhiteSpace();
         snapshot.Commits.Select(c => c.Subject).ShouldBe(["Add service", "Initial commit"]);
         snapshot.Commits[0].Paths.ShouldBe(["src/Service.cs"]);
         snapshot.Commits[0].Additions.ShouldBe(3);
-        snapshot.Files.Select(f => (f.Path, f.Lines)).ShouldBe([("README.md", 1), ("src/Service.cs", 3)], ignoreOrder: true);
-        Directory.EnumerateDirectories(Path.Combine(work, "devinsight")).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Captures_files_at_head_with_line_counts() =>
+        (await CaptureDemoRepositoryAsync()).Files.Select(f => (f.Path, f.Lines))
+            .ShouldBe([("README.md", 1), ("src/Service.cs", 3)], ignoreOrder: true);
+
+    [Fact]
+    public async Task Clone_is_deleted_after_capture()
+    {
+        await CaptureDemoRepositoryAsync();
+        Directory.EnumerateDirectories(Path.Combine(WorkRoot, "devinsight")).ShouldBeEmpty();
+    }
+
+    private async Task<Domain.Analyses.Engine.RepositorySnapshot> CaptureDemoRepositoryAsync()
+    {
+        CreateRepository(Path.Combine(_root, "octo", "demo.git"));
+        var source = new GitSnapshotSource(
+            Options.Create(new GitAnalysisOptions { CloneBaseUrl = new Uri(_root).AbsoluteUri, WorkRoot = WorkRoot }),
+            NullLogger<GitSnapshotSource>.Instance);
+        var repository = Repository.Import(Guid.NewGuid(), "octo",
+            new GitHubRepositoryInfo(1, "octo", "demo", null, "https://github.com/octo/demo", "C#", 0, 0, false, false, false, "main", 1, null), DateTimeOffset.UtcNow);
+        return await source.CaptureAsync(repository, "unused-token", TestContext.Current.CancellationToken);
     }
 
     [Fact]

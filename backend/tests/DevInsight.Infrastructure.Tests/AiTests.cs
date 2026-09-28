@@ -12,7 +12,7 @@ namespace DevInsight.Infrastructure.Tests;
 public class AiFindingsParserTests
 {
     [Fact]
-    public void Parses_findings_and_maps_enums()
+    public void Parses_findings_into_domain_values()
     {
         const string json = """
             {"findings":[
@@ -29,11 +29,14 @@ public class AiFindingsParserTests
     }
 
     [Fact]
-    public void Drops_empty_findings_and_caps_the_count()
-    {
-        const string json = """{"findings":[{"title":"","message":"x"},{"title":"a","message":"b"},{"title":"c","message":"d"}]}""";
-        AiFindingsParser.Parse(json, maxFindings: 1).ShouldHaveSingleItem().Title.ShouldBe("a");
-    }
+    public void Drops_findings_without_a_title() =>
+        AiFindingsParser.Parse("""{"findings":[{"title":"","message":"x"},{"title":"a","message":"b"}]}""", maxFindings: 5)
+            .ShouldHaveSingleItem().Title.ShouldBe("a");
+
+    [Fact]
+    public void Caps_the_number_of_findings() =>
+        AiFindingsParser.Parse("""{"findings":[{"title":"a","message":"b"},{"title":"c","message":"d"}]}""", maxFindings: 1)
+            .ShouldHaveSingleItem().Title.ShouldBe("a");
 
     [Fact]
     public void Unknown_enum_values_fall_back_safely() =>
@@ -41,7 +44,7 @@ public class AiFindingsParserTests
             .Single().ShouldSatisfyAllConditions(f => f.Severity.ShouldBe(Severity.Low), f => f.Category.ShouldBe(MetricCategory.Quality));
 
     [Fact]
-    public void Schema_forbids_extra_properties_and_bounds_the_count()
+    public void Schema_is_strict()
     {
         var schema = JsonSerializer.Serialize(AiFindingsParser.Schema(3));
         schema.ShouldContain("\"additionalProperties\":false");
@@ -64,7 +67,7 @@ public class ClaudeFeedbackGeneratorTests
     }
 
     [Fact]
-    public void Request_is_grounded_structured_and_has_refusal_fallback()
+    public void Request_matches_the_ai_contract()
     {
         var body = Generator("test-key").BuildRequest(Request()).ToString();
 

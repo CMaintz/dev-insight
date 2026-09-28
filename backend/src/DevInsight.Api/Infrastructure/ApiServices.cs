@@ -37,14 +37,25 @@ internal static class ApiServices
 
     private static void AddAuth(IServiceCollection services, IConfiguration configuration)
     {
+        AddSignIn(services, configuration);
+        AddCrossOriginSpa(services, configuration);
+        AddJwtBearer(services, configuration);
+        services.AddAuthorization();
+    }
+
+    private static void AddSignIn(IServiceCollection services, IConfiguration configuration)
+    {
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Section));
         services.AddSingleton<SessionTokenIssuer>();
         services.AddSingleton<OAuthState>();
         services.AddMemoryCache();
         services.AddSingleton<SignInCodes>();
-        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.Section));
+    }
 
-        // The SPA may live on another origin (GitHub Pages). Bearer tokens, no cookies ⇒ no credentials mode.
+    /// <summary>The SPA may live on another origin (GitHub Pages). Bearer tokens, no cookies ⇒ no credentials mode.</summary>
+    private static void AddCrossOriginSpa(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.Section));
         services.AddCors();
         services.AddOptions<CorsOptions>().Configure<IOptions<FrontendOptions>>((cors, frontend) =>
         {
@@ -57,7 +68,10 @@ internal static class ApiServices
                     .WithExposedHeaders("Location"));
             }
         });
+    }
 
+    private static void AddJwtBearer(IServiceCollection services, IConfiguration configuration)
+    {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
             .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
@@ -72,7 +86,6 @@ internal static class ApiServices
                     ClockSkew = TimeSpan.FromMinutes(1),
                 };
             });
-        services.AddAuthorization();
     }
 
     private static void AddRateLimits(IServiceCollection services) =>

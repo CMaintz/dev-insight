@@ -34,11 +34,8 @@ public sealed class AnalysisQueries(
         return analysis;
     }
 
-    public async Task<AnalysisRun> GetRunAsync(Guid userId, Guid runId, CancellationToken cancellationToken)
-    {
-        var run = await runs.GetAsync(runId, cancellationToken);
-        return run is not null && run.UserId == userId ? run : throw new NotFoundException("Analysis run", runId);
-    }
+    public async Task<AnalysisRun> GetRunAsync(Guid userId, Guid runId, CancellationToken cancellationToken) =>
+        (await runs.GetAsync(runId, cancellationToken)).OwnedBy(userId, "Analysis run", runId);
 
     public Task<IReadOnlyList<AnalysisRun>> ListRecentRunsAsync(Guid userId, CancellationToken cancellationToken) =>
         runs.ListRecentForUserAsync(userId, limit: 50, cancellationToken);

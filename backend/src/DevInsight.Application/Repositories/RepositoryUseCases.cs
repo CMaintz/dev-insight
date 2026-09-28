@@ -23,31 +23,29 @@ public sealed class ImportRepositories(
         var token = await credentials.GetAsync(userId, cancellationToken)
             ?? throw new PreconditionFailedException("No GitHub token on file. Sign in with GitHub again.");
         var remote = await gitHub.ListRepositoriesAsync(token, cancellationToken);
-        var existing = (await repositories.ListForUserAsync(userId, cancellationToken))
-            .ToDictionary(r => r.GitHubRepoId);
+        var existing = (await repositories.ListForUserAsync(userId, cancellationToken)).ToDictionary(r => r.GitHubRepoId);
+        var updated = remote.Count(info => existing.ContainsKey(info.GitHubRepoId));
         var now = clock.GetUtcNow();
-        var imported = 0;
-
-        var synced = new List<Repository>(remote.Count);
-        foreach (var info in remote)
-        {
-            if (existing.TryGetValue(info.GitHubRepoId, out var repository))
-            {
-                repository.Refresh(info, now);
-            }
-            else
-            {
-                repository = Repository.Import(userId, user.Login, info, now);
-                repositories.Add(repository);
-                imported++;
-            }
-
-            synced.Add(repository);
-        }
+        List<Repository> synced = [.. remote.Select(info => Upsert(user.Login, userId, info, existing, now))];
 
         await FetchLanguagesAsync(token, synced, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return new ImportSummary(imported, remote.Count - imported, remote.Count);
+        return new ImportSummary(remote.Count - updated, updated, remote.Count);
+    }
+
+    /// <summary>Refreshes the repository if it was imported before; otherwise imports it.</summary>
+    private Repository Upsert(
+        string login, Guid userId, GitHubRepositoryInfo info, Dictionary<long, Repository> existing, DateTimeOffset now)
+    {
+        if (existing.TryGetValue(info.GitHubRepoId, out var repository))
+        {
+            repository.Refresh(info, now);
+            return repository;
+        }
+
+        repository = Repository.Import(userId, login, info, now);
+        repositories.Add(repository);
+        return repository;
     }
 
     private async Task FetchLanguagesAsync(string token, List<Repository> synced, CancellationToken cancellationToken)
@@ -80,13 +78,8 @@ public sealed class RepositoryQueries(IRepositoryStore repositories, IUnitOfWork
             .OrderByDescending(r => r.LastActivity)
             .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)];
 
-    public async Task<Repository> GetAsync(Guid userId, Guid repositoryId, CancellationToken cancellationToken)
-    {
-        var repository = await repositories.GetAsync(repositoryId, cancellationToken);
-        return repository is not null && repository.UserId == userId
-            ? repository
-            : throw new NotFoundException("Repository", repositoryId);
-    }
+    public async Task<Repository> GetAsync(Guid userId, Guid repositoryId, CancellationToken cancellationToken) =>
+        (await repositories.GetAsync(repositoryId, cancellationToken)).OwnedBy(userId, "Repository", repositoryId);
 
     public async Task<Repository> SetSelectedAsync(
         Guid userId, Guid repositoryId, bool isSelected, CancellationToken cancellationToken)

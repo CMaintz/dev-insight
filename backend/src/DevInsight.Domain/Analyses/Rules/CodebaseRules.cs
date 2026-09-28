@@ -17,27 +17,36 @@ public sealed class StructureRule : IFeedbackRule
         var largest = analysis.LargestFiles.FirstOrDefault();
         if (analysis.Metric(MetricKeys.MonolithIndicator) > 0)
         {
-            yield return new FeedbackFinding("monolith", MetricCategory.Structure, Severity.High,
-                "Structure suggests a monolith",
-                $"Most of the code lives in {largeFiles} file(s) over {StructureAnalyzer.LargeFileLines} lines"
-                + (largest is null ? "." : $", the largest being {largest.Path} ({largest.Lines} lines).")
-                + " Consider separating responsibilities into smaller modules.");
+            yield return Monolith(largeFiles, largest);
         }
         else if (largeFiles > 0)
         {
-            yield return new FeedbackFinding("large-files", MetricCategory.Structure, Severity.Medium,
-                $"{largeFiles} file(s) exceed {StructureAnalyzer.LargeFileLines} lines",
-                (largest is null ? string.Empty : $"Start with {largest.Path} ({largest.Lines} lines). ")
-                + "Large files usually carry several responsibilities; splitting them by concern makes them easier to test.");
+            yield return LargeFiles(largeFiles, largest);
         }
         else
         {
-            yield return new FeedbackFinding("separation-of-concerns", MetricCategory.Structure, Severity.Low,
-                "Good separation of concerns",
-                $"No file exceeds {StructureAnalyzer.LargeFileLines} lines and the median file is {analysis.Metric(MetricKeys.MedianFileLines):0} lines — responsibilities are split into focused units.",
-                IsStrength: true);
+            yield return SeparationOfConcerns(analysis.Metric(MetricKeys.MedianFileLines));
         }
     }
+
+    private static FeedbackFinding Monolith(int largeFiles, FileSize? largest) =>
+        new("monolith", MetricCategory.Structure, Severity.High,
+            "Structure suggests a monolith",
+            $"Most of the code lives in {largeFiles} file(s) over {StructureAnalyzer.LargeFileLines} lines"
+            + (largest is null ? "." : $", the largest being {largest.Path} ({largest.Lines} lines).")
+            + " Consider separating responsibilities into smaller modules.");
+
+    private static FeedbackFinding LargeFiles(int largeFiles, FileSize? largest) =>
+        new("large-files", MetricCategory.Structure, Severity.Medium,
+            $"{largeFiles} file(s) exceed {StructureAnalyzer.LargeFileLines} lines",
+            (largest is null ? string.Empty : $"Start with {largest.Path} ({largest.Lines} lines). ")
+            + "Large files usually carry several responsibilities; splitting them by concern makes them easier to test.");
+
+    private static FeedbackFinding SeparationOfConcerns(double medianLines) =>
+        new("separation-of-concerns", MetricCategory.Structure, Severity.Low,
+            "Good separation of concerns",
+            $"No file exceeds {StructureAnalyzer.LargeFileLines} lines and the median file is {medianLines:0} lines — responsibilities are split into focused units.",
+            IsStrength: true);
 }
 
 public sealed class TestsRule : IFeedbackRule

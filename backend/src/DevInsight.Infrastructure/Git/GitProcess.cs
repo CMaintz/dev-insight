@@ -12,6 +12,22 @@ internal sealed class GitProcess(string executable)
         IReadOnlyDictionary<string, string> environment,
         CancellationToken cancellationToken)
     {
+        using var process = Process.Start(StartInfo(workingDirectory, arguments, environment))
+            ?? throw new InvalidOperationException("Could not start git.");
+        var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
+        await WaitOrKillAsync(process, cancellationToken);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"git {Subcommand(arguments)} failed ({process.ExitCode}): {(await stderr).Trim()}");
+        }
+
+        return await stdout;
+    }
+
+    private ProcessStartInfo StartInfo(
+        string workingDirectory, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string> environment)
+    {
         var startInfo = new ProcessStartInfo(executable)
         {
             WorkingDirectory = workingDirectory,
@@ -21,10 +37,7 @@ internal sealed class GitProcess(string executable)
             CreateNoWindow = true,
             StandardOutputEncoding = Encoding.UTF8,
         };
-        foreach (var argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
+        arguments.ToList().ForEach(startInfo.ArgumentList.Add);
 
         // Never block on a credential prompt; fail instead.
         startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
@@ -34,9 +47,11 @@ internal sealed class GitProcess(string executable)
             startInfo.Environment[key] = value;
         }
 
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start git.");
-        var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
+        return startInfo;
+    }
+
+    private static async Task WaitOrKillAsync(Process process, CancellationToken cancellationToken)
+    {
         try
         {
             await process.WaitForExitAsync(cancellationToken);
@@ -46,13 +61,8 @@ internal sealed class GitProcess(string executable)
             process.Kill(entireProcessTree: true);
             throw;
         }
-
-        if (process.ExitCode != 0)
-        {
-            var error = (await stderr).Trim();
-            throw new InvalidOperationException($"git {arguments.First(a => !a.StartsWith('-') && !a.Contains('='))} failed ({process.ExitCode}): {error}");
-        }
-
-        return await stdout;
     }
+
+    private static string Subcommand(IReadOnlyList<string> arguments) =>
+        arguments.First(a => !a.StartsWith('-') && !a.Contains('='));
 }

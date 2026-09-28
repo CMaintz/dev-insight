@@ -11,49 +11,47 @@ namespace DevInsight.Infrastructure.Git;
 internal static class GitLogParser
 {
     public const string Format = "%x1e%H%x1f%an%x1f%ae%x1f%aI%x1f%P%x1f%s";
+    private const int HeaderFields = 6;
 
-    public static IReadOnlyList<CommitRecord> Parse(string output)
+    public static IReadOnlyList<CommitRecord> Parse(string output) =>
+    [
+        .. output.Split('\u001e', StringSplitOptions.RemoveEmptyEntries)
+            .Select(ParseRecord)
+            .OfType<CommitRecord>(),
+    ];
+
+    private static CommitRecord? ParseRecord(string record)
     {
-        var commits = new List<CommitRecord>();
-        foreach (var record in output.Split('\u001e', StringSplitOptions.RemoveEmptyEntries))
+        var lines = record.Split('\n');
+        var header = lines[0].Split('\u001f');
+        if (header.Length < HeaderFields)
         {
-            var lines = record.Split('\n');
-            var header = lines[0].Split('\u001f');
-            if (header.Length < 6)
-            {
-                continue;
-            }
-
-            var additions = 0;
-            var deletions = 0;
-            var paths = new List<string>();
-            foreach (var line in lines.Skip(1))
-            {
-                var parts = line.Split('\t');
-                if (parts.Length != 3)
-                {
-                    continue;
-                }
-
-                // Binary files report "-" for both counts.
-                additions += int.TryParse(parts[0], out var added) ? added : 0;
-                deletions += int.TryParse(parts[1], out var deleted) ? deleted : 0;
-                paths.Add(parts[2].Trim());
-            }
-
-            var parents = header[4].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            commits.Add(new CommitRecord(
-                Sha: header[0],
-                AuthorName: header[1],
-                AuthorEmail: header[2].ToLowerInvariant(),
-                AuthoredAt: DateTimeOffset.Parse(header[3], CultureInfo.InvariantCulture),
-                Subject: header[5].TrimEnd('\r'),
-                Additions: additions,
-                Deletions: deletions,
-                IsMerge: parents.Length > 1,
-                Paths: paths));
+            return null;
         }
 
-        return commits;
+        var changes = lines.Skip(1).Select(ParseNumstat).OfType<FileChange>().ToList();
+        return new CommitRecord(
+            Sha: header[0],
+            AuthorName: header[1],
+            AuthorEmail: header[2].ToLowerInvariant(),
+            AuthoredAt: DateTimeOffset.Parse(header[3], CultureInfo.InvariantCulture),
+            Subject: header[5].TrimEnd('\r'),
+            Additions: changes.Sum(c => c.Additions),
+            Deletions: changes.Sum(c => c.Deletions),
+            IsMerge: header[4].Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1,
+            Paths: [.. changes.Select(c => c.Path)]);
     }
+
+    /// <summary>One "added⇥deleted⇥path" line; binary files report "-" for both counts.</summary>
+    private static FileChange? ParseNumstat(string line)
+    {
+        var parts = line.Split('\t');
+        return parts.Length == 3
+            ? new FileChange(parts[2].Trim(), CountOrZero(parts[0]), CountOrZero(parts[1]))
+            : null;
+    }
+
+    private static int CountOrZero(string value) => int.TryParse(value, out var count) ? count : 0;
+
+    private sealed record FileChange(string Path, int Additions, int Deletions);
 }

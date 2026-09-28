@@ -3,7 +3,7 @@ using DevInsight.Domain.Common;
 namespace DevInsight.Domain.Projects;
 
 /// <summary>A curated portfolio entry: a named story that can group several repositories.</summary>
-public sealed class Project
+public sealed class Project : IUserOwned
 {
     private const int MaxImages = 10;
 

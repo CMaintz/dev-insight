@@ -14,7 +14,7 @@ public enum AnalysisRunStatus
 /// A requested analysis. Cloning and measuring a repository takes seconds to minutes, so the API
 /// accepts the request, returns this run, and a background worker executes it.
 /// </summary>
-public sealed class AnalysisRun
+public sealed class AnalysisRun : IUserOwned
 {
     private const int MaxErrorLength = 1000;
 

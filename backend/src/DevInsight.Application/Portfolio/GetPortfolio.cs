@@ -41,38 +41,30 @@ public sealed class GetPortfolio(
     /// <param name="viewerId">The signed-in viewer, if any — owners can preview an unpublished portfolio.</param>
     public async Task<PortfolioView> ExecuteAsync(string handle, Guid? viewerId, CancellationToken cancellationToken)
     {
-        var owner = (Guid.TryParse(handle, out var id)
-                ? await users.GetAsync(id, cancellationToken)
-                : await users.FindByLoginAsync(handle, cancellationToken))
-            ?? throw new NotFoundException("Portfolio", handle);
-        if (!owner.IsPortfolioPublic && owner.Id != viewerId)
-        {
-            throw new NotFoundException("Portfolio", handle);
-        }
-
-        var selected = (await repositories.ListForUserAsync(owner.Id, cancellationToken)).Where(r => r.IsSelected && !r.IsPrivate).ToList();
-        var selectedIds = selected.Select(r => r.Id).ToList();
-        var latest = await analyses.GetLatestForRepositoriesAsync(selectedIds, PortfolioScope, cancellationToken);
-        var latestByRepo = latest.ToDictionary(a => a.RepositoryId);
-        var history = await analyses.GetScoreHistoryAsync(selectedIds, PortfolioScope, cancellationToken);
-        var names = selected.ToDictionary(r => r.Id, r => r.Name);
-        var visibleRepoIds = selectedIds.ToHashSet();
-
+        var owner = await FindVisibleOwnerAsync(handle, viewerId, cancellationToken);
+        var shown = (await repositories.ListForUserAsync(owner.Id, cancellationToken)).Where(r => r.IsSelected && !r.IsPrivate).ToList();
+        var insights = await RepositoryInsights.LoadAsync(analyses, shown, PortfolioScope, cancellationToken);
+        var shownIds = shown.Select(r => r.Id).ToHashSet();
         return new PortfolioView(
             owner,
-            Insights.AverageScores(latest),
-            [.. selected
-                .OrderByDescending(r => latestByRepo.GetValueOrDefault(r.Id)?.OverallScore ?? -1)
-                .ThenByDescending(r => r.Stars)
-                .Select(r => new RepositorySummary(r, latestByRepo.GetValueOrDefault(r.Id)))],
-            [.. (await projects.ListForUserAsync(owner.Id, cancellationToken))
-                .OrderBy(p => p.SortOrder)
-                .Select(p => ToPublic(p, visibleRepoIds))],
-            Insights.Languages(selected),
-            Insights.CombinedTimeline(latest),
-            Insights.ScoreEvolution(history),
-            [.. latest
-                .SelectMany(a => a.Feedback.Where(f => f.IsStrength).Select(f => new FeedbackHighlight(a.RepositoryId, names[a.RepositoryId], f)))]);
+            Insights.AverageScores(insights.Latest),
+            [.. shown.Select(insights.SummaryOf).OrderByDescending(s => s.LatestAnalysis?.OverallScore ?? -1).ThenByDescending(s => s.Repository.Stars)],
+            [.. (await projects.ListForUserAsync(owner.Id, cancellationToken)).OrderBy(p => p.SortOrder).Select(p => ToPublic(p, shownIds))],
+            Insights.Languages(shown),
+            Insights.CombinedTimeline(insights.Latest),
+            Insights.ScoreEvolution(insights.History),
+            [.. insights.Highlights(f => f.IsStrength)]);
+    }
+
+    /// <summary>An unpublished portfolio is indistinguishable from a missing one, except to its owner.</summary>
+    private async Task<User> FindVisibleOwnerAsync(string handle, Guid? viewerId, CancellationToken cancellationToken)
+    {
+        var owner = Guid.TryParse(handle, out var id)
+            ? await users.GetAsync(id, cancellationToken)
+            : await users.FindByLoginAsync(handle, cancellationToken);
+        return owner is not null && (owner.IsPortfolioPublic || owner.Id == viewerId)
+            ? owner
+            : throw new NotFoundException("Portfolio", handle);
     }
 
     /// <summary>A project may link a repository that was later deselected; the public view must not reveal it.</summary>

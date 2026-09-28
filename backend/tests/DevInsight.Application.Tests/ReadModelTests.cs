@@ -65,17 +65,40 @@ public class GetPortfolioTests
     private GetPortfolio Sut() => new(_world.Users, _world.Repositories, _world.Analyses, _world.Projects);
 
     [Fact]
-    public async Task Unpublished_portfolio_is_hidden_from_visitors_but_previewable_by_its_owner()
+    public async Task Unpublished_portfolio_is_hidden_from_visitors()
     {
-        var owner = _world.AddUser();
-        var ct = TestContext.Current.CancellationToken;
-
-        await Should.ThrowAsync<NotFoundException>(() => Sut().ExecuteAsync("octo", viewerId: null, ct));
-        (await Sut().ExecuteAsync("octo", owner.Id, ct)).Owner.ShouldBe(owner);
+        _world.AddUser();
+        await Should.ThrowAsync<NotFoundException>(() => Sut().ExecuteAsync("octo", viewerId: null, TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public async Task Public_portfolio_shows_public_selected_repositories_and_strengths_only()
+    public async Task Owner_can_preview_an_unpublished_portfolio()
+    {
+        var owner = _world.AddUser();
+        (await Sut().ExecuteAsync("octo", owner.Id, TestContext.Current.CancellationToken)).Owner.ShouldBe(owner);
+    }
+
+    [Fact]
+    public async Task Public_portfolio_hides_private_or_deselected_repositories()
+    {
+        var (view, shown) = await PublishedPortfolioWithHiddenRepositoriesAsync();
+
+        view.Repositories.ShouldHaveSingleItem().Repository.ShouldBe(shown);
+        view.Projects.ShouldHaveSingleItem().LinkedRepositoryIds.ShouldBe([shown.Id]);
+        view.Scores.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Public_portfolio_shows_strengths_only()
+    {
+        var (view, _) = await PublishedPortfolioWithHiddenRepositoriesAsync();
+
+        view.Strengths.ShouldNotBeEmpty();
+        view.Strengths.ShouldAllBe(s => s.Feedback.IsStrength);
+    }
+
+    /// <summary>A published portfolio with one shown, one private and one deselected repository, all linked from a project.</summary>
+    private async Task<(PortfolioView View, Domain.Repositories.Repository Shown)> PublishedPortfolioWithHiddenRepositoriesAsync()
     {
         var owner = _world.AddUser();
         owner.UpdateProfile("Hello", null, isPortfolioPublic: true, World.Now);
@@ -85,14 +108,7 @@ public class GetPortfolioTests
         deselected.SetSelected(false, World.Now);
         _world.AddAnalysis(shown, AnalysisScope.UserContribution, World.Now);
         _world.Projects.Add(Project.Create(owner.Id, new ProjectDetails("P", null, [], [shown.Id, privateRepo.Id, deselected.Id], 0), World.Now));
-
-        var view = await Sut().ExecuteAsync(owner.Id.ToString(), viewerId: null, TestContext.Current.CancellationToken);
-
-        view.Repositories.ShouldHaveSingleItem().Repository.ShouldBe(shown);
-        view.Projects.ShouldHaveSingleItem().LinkedRepositoryIds.ShouldBe([shown.Id]);
-        view.Strengths.ShouldNotBeEmpty();
-        view.Strengths.ShouldAllBe(s => s.Feedback.IsStrength);
-        view.Scores.ShouldNotBeNull();
+        return (await Sut().ExecuteAsync(owner.Id.ToString(), viewerId: null, TestContext.Current.CancellationToken), shown);
     }
 
     [Fact]

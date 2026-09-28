@@ -43,16 +43,17 @@ internal sealed class EfAnalysisRunStore(DevInsightDbContext db) : IAnalysisRunS
     public Task<AnalysisRun?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         db.AnalysisRuns.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
+    private IQueryable<AnalysisRun> Unfinished =>
+        db.AnalysisRuns.Where(r => r.Status == AnalysisRunStatus.Queued || r.Status == AnalysisRunStatus.Running);
+
     public Task<AnalysisRun?> FindUnfinishedAsync(Guid repositoryId, AnalysisScope scope, CancellationToken cancellationToken) =>
-        db.AnalysisRuns
+        Unfinished
             .Where(r => r.RepositoryId == repositoryId && r.Scope == scope)
-            .Where(r => r.Status == AnalysisRunStatus.Queued || r.Status == AnalysisRunStatus.Running)
             .OrderByDescending(r => r.RequestedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<AnalysisRun>> ListUnfinishedAsync(CancellationToken cancellationToken) =>
-        await db.AnalysisRuns
-            .Where(r => r.Status == AnalysisRunStatus.Queued || r.Status == AnalysisRunStatus.Running)
+        await Unfinished
             .OrderBy(r => r.RequestedAt)
             .ToListAsync(cancellationToken);
 

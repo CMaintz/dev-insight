@@ -40,11 +40,8 @@ public sealed class ProjectUseCases(
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<Project> GetOwnedAsync(Guid userId, Guid projectId, CancellationToken cancellationToken)
-    {
-        var project = await projects.GetAsync(projectId, cancellationToken);
-        return project is not null && project.UserId == userId ? project : throw new NotFoundException("Project", projectId);
-    }
+    private async Task<Project> GetOwnedAsync(Guid userId, Guid projectId, CancellationToken cancellationToken) =>
+        (await projects.GetAsync(projectId, cancellationToken)).OwnedBy(userId, "Project", projectId);
 
     private async Task EnsureOwnRepositoriesAsync(
         Guid userId, IReadOnlyList<Guid> repositoryIds, CancellationToken cancellationToken)

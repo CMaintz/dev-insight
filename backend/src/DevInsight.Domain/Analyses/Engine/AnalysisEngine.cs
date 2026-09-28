@@ -19,36 +19,38 @@ public static class AnalysisEngine
         ContributorIdentity contributor,
         DateTimeOffset now)
     {
-        var commits = scope == AnalysisScope.Repo
-            ? snapshot.Commits
-            : [.. snapshot.Commits.Where(c => contributor.Authored(c.AuthorEmail))];
-        var files = scope == AnalysisScope.Repo ? snapshot.Files : TouchedFiles(snapshot.Files, commits);
-        var contributors = snapshot.Commits
-            .Select(c => c.AuthorEmail.ToLowerInvariant())
-            .Distinct(StringComparer.Ordinal)
-            .Count();
-
+        var (commits, files) = InScope(snapshot, scope, contributor);
         var activity = ActivityAnalyzer.Analyze(commits, now);
-        var commitQuality = CommitQualityAnalyzer.Analyze(commits);
         var structure = StructureAnalyzer.Analyze(files);
         var quality = QualityAnalyzer.Analyze(
-            files, snapshot.Files, CommitQualityAnalyzer.MessageQuality(commits), contributors);
+            files, snapshot.Files, CommitQualityAnalyzer.MessageQuality(commits), ContributorCount(snapshot.Commits));
 
         return new AnalysisResult(
             snapshot.HeadCommitSha,
             ActivityScore: Scoring.Dimension(activity),
             StructureScore: Scoring.Dimension(structure),
             QualityScore: Scoring.Dimension(quality),
-            Metrics: [.. activity, .. commitQuality, .. structure, .. quality],
+            Metrics: [.. activity, .. CommitQualityAnalyzer.Analyze(commits), .. structure, .. quality],
             Timeline: BuildTimeline(commits, now),
             LargestFiles: LargestFiles(files));
     }
 
-    private static List<SourceFile> TouchedFiles(IReadOnlyList<SourceFile> files, IReadOnlyList<CommitRecord> commits)
+    /// <summary>The commits and files an analysis in <paramref name="scope"/> looks at.</summary>
+    private static (IReadOnlyList<CommitRecord> Commits, IReadOnlyList<SourceFile> Files) InScope(
+        RepositorySnapshot snapshot, AnalysisScope scope, ContributorIdentity contributor)
     {
-        var touched = commits.SelectMany(c => c.Paths).ToHashSet(StringComparer.Ordinal);
-        return [.. files.Where(f => touched.Contains(f.Path))];
+        if (scope == AnalysisScope.Repo)
+        {
+            return (snapshot.Commits, snapshot.Files);
+        }
+
+        List<CommitRecord> own = [.. snapshot.Commits.Where(c => contributor.Authored(c.AuthorEmail))];
+        var touched = own.SelectMany(c => c.Paths).ToHashSet(StringComparer.Ordinal);
+        return (own, [.. snapshot.Files.Where(f => touched.Contains(f.Path))]);
     }
+
+    private static int ContributorCount(IReadOnlyList<CommitRecord> commits) =>
+        commits.Select(c => c.AuthorEmail.ToLowerInvariant()).Distinct(StringComparer.Ordinal).Count();
 
     /// <summary>Weekly buckets from the first commit (at most two years back) up to this week, gaps included.</summary>
     private static List<ActivityWeek> BuildTimeline(IReadOnlyList<CommitRecord> commits, DateTimeOffset now)

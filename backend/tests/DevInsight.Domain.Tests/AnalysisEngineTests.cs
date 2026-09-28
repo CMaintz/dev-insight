@@ -28,7 +28,7 @@ public class AnalysisEngineTests
     }
 
     [Fact]
-    public void Overall_score_weights_activity_structure_and_quality_30_30_40() =>
+    public void Overall_score_weights_dimensions_30_30_40() =>
         Scoring.Overall(activity: 50, structure: 100, quality: 0).ShouldBe(45);
 
     [Fact]
@@ -62,7 +62,7 @@ public class AnalysisEngineTests
     }
 
     [Fact]
-    public void Timeline_is_weekly_and_fills_gaps()
+    public void Timeline_has_a_bucket_for_every_week()
     {
         var commits = new[] { Commit(daysAgo: 1), Commit(daysAgo: 22), Commit(daysAgo: 23) };
         var result = AnalysisEngine.Analyze(Snapshot(commits), AnalysisScope.Repo, Identity, Now);

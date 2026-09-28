@@ -17,7 +17,7 @@ public class FeedbackRuleTests
     }
 
     [Fact]
-    public void Healthy_project_gets_commit_and_structure_strengths()
+    public void Healthy_project_gets_strength_findings()
     {
         var feedback = Evaluate(WeeklyCommits(20));
 
@@ -28,13 +28,14 @@ public class FeedbackRuleTests
     }
 
     [Fact]
-    public void Always_yields_at_least_one_commit_and_one_structure_finding()
-    {
-        var feedback = Evaluate([Commit(1, "fix"), Commit(2, "update")], [File("src/Program.cs", 3000)]);
+    public void Commit_message_feedback_is_always_given() =>
+        Evaluate([Commit(1, "fix"), Commit(2, "update")], [File("src/Program.cs", 3000)])
+            .ShouldContain(f => f.Category == MetricCategory.CommitQuality);
 
-        feedback.ShouldContain(f => f.Category == MetricCategory.CommitQuality);
-        feedback.ShouldContain(f => f.Category == MetricCategory.Structure);
-    }
+    [Fact]
+    public void Structure_feedback_is_always_given() =>
+        Evaluate([Commit(1, "fix"), Commit(2, "update")], [File("src/Program.cs", 3000)])
+            .ShouldContain(f => f.Category == MetricCategory.Structure);
 
     [Fact]
     public void Mostly_vague_commits_is_high_severity()
@@ -55,7 +56,7 @@ public class FeedbackRuleTests
     }
 
     [Fact]
-    public void Missing_tests_readme_lint_and_ci_are_reported()
+    public void Missing_project_hygiene_is_reported()
     {
         var feedback = Evaluate([Commit(1)], [File("main.py", 100)]);
         feedback.Select(f => f.Source).ShouldBe(

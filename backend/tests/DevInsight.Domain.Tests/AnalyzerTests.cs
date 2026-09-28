@@ -105,7 +105,7 @@ public class QualityAnalyzerTests
         Scoring.Dimension(QualityAnalyzer.Analyze(HealthyFiles(), HealthyFiles(), 100, 1)).ShouldBe(100);
 
     [Fact]
-    public void Missing_tests_readme_lint_and_ci_leaves_only_commit_quality()
+    public void Without_project_hygiene_only_commit_quality_scores()
     {
         var files = new[] { File("main.py", 100) };
         Scoring.Dimension(QualityAnalyzer.Analyze(files, files, 100, 1)).ShouldBe(25);

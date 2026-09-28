@@ -28,42 +28,28 @@ public sealed class GetDashboard(IRepositoryStore repositories, IAnalysisStore a
 
     public async Task<DashboardView> ExecuteAsync(Guid userId, AnalysisScope scope, CancellationToken cancellationToken)
     {
-        var all = await repositories.ListForUserAsync(userId, cancellationToken);
-        var selected = all.Where(r => r.IsSelected).ToList();
-        var latest = await analyses.GetLatestForRepositoriesAsync([.. all.Select(r => r.Id)], scope, cancellationToken);
-        var latestByRepo = latest.ToDictionary(a => a.RepositoryId);
-        var selectedIds = selected.Select(r => r.Id).ToHashSet();
-        var selectedLatest = latest.Where(a => selectedIds.Contains(a.RepositoryId)).ToList();
-        var history = await analyses.GetScoreHistoryAsync(selectedIds, scope, cancellationToken);
-
+        var all = await RepositoryInsights.LoadAsync(
+            analyses, await repositories.ListForUserAsync(userId, cancellationToken), scope, cancellationToken);
+        var selected = all.Where(r => r.IsSelected);
         return new DashboardView(
             scope,
-            all.Count,
-            selected.Count,
-            selectedLatest.Count,
-            Insights.AverageScores(selectedLatest),
-            [.. all
-                .OrderByDescending(r => r.IsSelected)
-                .ThenByDescending(r => r.LastActivity)
-                .Select(r => new RepositorySummary(r, latestByRepo.GetValueOrDefault(r.Id)))],
-            Insights.Languages(selected),
-            Insights.CombinedTimeline(selectedLatest),
-            Insights.ScoreEvolution(history),
-            Insights.CommitQuality(selectedLatest),
-            TopFeedback(selected, selectedLatest));
+            all.Repositories.Count,
+            selected.Repositories.Count,
+            selected.Latest.Count,
+            Insights.AverageScores(selected.Latest),
+            [.. all.Repositories.OrderByDescending(r => r.IsSelected).ThenByDescending(r => r.LastActivity).Select(all.SummaryOf)],
+            Insights.Languages(selected.Repositories),
+            Insights.CombinedTimeline(selected.Latest),
+            Insights.ScoreEvolution(selected.History),
+            Insights.CommitQuality(selected.Latest),
+            TopFeedback(selected));
     }
 
-    private static List<FeedbackHighlight> TopFeedback(List<Repository> selected, List<Analysis> latest)
-    {
-        var names = selected.ToDictionary(r => r.Id, r => r.Name);
-        return
-        [
-            .. latest
-                .SelectMany(a => a.Feedback.Where(f => !f.IsStrength).Select(f => (a.RepositoryId, Feedback: f)))
-                .OrderByDescending(x => x.Feedback.Severity)
-                .ThenBy(x => names[x.RepositoryId], StringComparer.OrdinalIgnoreCase)
-                .Take(TopFeedbackCount)
-                .Select(x => new FeedbackHighlight(x.RepositoryId, names[x.RepositoryId], x.Feedback)),
-        ];
-    }
+    private static List<FeedbackHighlight> TopFeedback(RepositoryInsights selected) =>
+    [
+        .. selected.Highlights(f => !f.IsStrength)
+            .OrderByDescending(h => h.Feedback.Severity)
+            .ThenBy(h => h.RepositoryName, StringComparer.OrdinalIgnoreCase)
+            .Take(TopFeedbackCount),
+    ];
 }

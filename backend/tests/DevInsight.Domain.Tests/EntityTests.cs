@@ -13,7 +13,7 @@ public class UserTests
         new(id, login, "Octo Cat", "Octo@Example.com", "https://avatars/1", ["work@example.com"]);
 
     [Fact]
-    public void Commit_emails_include_verified_and_noreply_addresses()
+    public void Commit_emails_cover_every_address_GitHub_attributes()
     {
         var user = User.Register(Identity(), Now);
         user.CommitEmails.ShouldBe(
@@ -79,7 +79,7 @@ public class RepositoryTests
         Should.Throw<DomainException>(() => Repository.Import(Guid.NewGuid(), "octo", Info(), Now).Refresh(Info(id: 2), Now));
 
     [Fact]
-    public void Full_name_combines_owner_and_name() =>
+    public void Full_name_is_owner_slash_name() =>
         Repository.Import(Guid.NewGuid(), "octo", Info(), Now).FullName.ShouldBe("octo/devinsight");
 }
 

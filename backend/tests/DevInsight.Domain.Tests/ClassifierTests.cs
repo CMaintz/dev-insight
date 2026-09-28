@@ -63,7 +63,7 @@ public class FileClassifierTests
     [InlineData("src/Migrations/20260101_Init.cs")]
     [InlineData("wwwroot/lib/jquery.min.js")]
     [InlineData("obj/Debug/App.g.cs")]
-    public void Vendored_and_generated_files_are_ignored(string path)
+    public void Vendored_or_generated_files_are_ignored(string path)
     {
         FileClassifier.IsIgnored(path).ShouldBeTrue();
         FileClassifier.IsSource(path).ShouldBeFalse();

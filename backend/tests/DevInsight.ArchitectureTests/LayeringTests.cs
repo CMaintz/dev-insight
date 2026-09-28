@@ -11,7 +11,7 @@ public class LayeringTests
     private static readonly Assembly Infrastructure = typeof(Infrastructure.DependencyInjection).Assembly;
 
     [Fact]
-    public void Domain_depends_on_nothing_but_the_base_library() =>
+    public void Domain_depends_only_on_the_base_library() =>
         AssertNoDependency(Domain,
             "DevInsight.Application", "DevInsight.Infrastructure", "DevInsight.Api",
             "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore", "Microsoft.Extensions", "Octokit", "Anthropic", "Npgsql");

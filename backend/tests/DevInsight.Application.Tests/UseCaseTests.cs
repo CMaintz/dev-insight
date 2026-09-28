@@ -17,7 +17,7 @@ public class LoginWithGitHubTests
     private LoginWithGitHub Sut() => new(_world.GitHub, _world.Users, _world.Credentials, _world, _world.Clock);
 
     [Fact]
-    public async Task First_login_registers_the_user_and_stores_the_token()
+    public async Task First_login_registers_the_user_with_their_token()
     {
         var user = await Sut().ExecuteAsync("code1", TestContext.Current.CancellationToken);
 
@@ -49,7 +49,7 @@ public class ImportRepositoriesTests
         new(_world.GitHub, _world.Users, _world.Credentials, _world.Repositories, _world, _world.Clock);
 
     [Fact]
-    public async Task Reimport_never_duplicates_and_refreshes_metadata()
+    public async Task Reimport_updates_instead_of_duplicating()
     {
         var user = _world.AddUser();
         _world.GitHub.Repositories.Add(FakeGitHub.Info("octo", "a", id: 1));
@@ -92,7 +92,7 @@ public class RepositoryQueriesTests
     }
 
     [Fact]
-    public async Task Selection_is_toggled_and_saved()
+    public async Task Selection_change_is_saved()
     {
         var owner = _world.AddUser();
         var repository = _world.AddRepository(owner);
@@ -171,20 +171,34 @@ public class AnalysisUseCaseTests
     }
 
     [Fact]
-    public async Task Ai_feedback_is_added_when_enabled_and_ignored_when_it_fails()
+    public async Task Ai_feedback_is_added_when_enabled()
+    {
+        _world.Ai.IsEnabled = true;
+
+        await AnalyseNewRepositoryAsync();
+
+        _world.Analyses.All.Single().Feedback.ShouldContain(f => f.Type == FeedbackType.Ai && f.Title == "Prioritise tests");
+    }
+
+    [Fact]
+    public async Task Failing_ai_feedback_does_not_fail_the_analysis()
+    {
+        _world.Ai.IsEnabled = true;
+        _world.Ai.Failure = new HttpRequestException("down");
+
+        var run = await AnalyseNewRepositoryAsync();
+
+        run.Status.ShouldBe(AnalysisRunStatus.Succeeded);
+        _world.Analyses.All.Single().Feedback.ShouldNotContain(f => f.Type == FeedbackType.Ai);
+    }
+
+    private async Task<AnalysisRun> AnalyseNewRepositoryAsync()
     {
         var user = _world.AddUser();
         var repository = _world.AddRepository(user);
-        _world.Ai.IsEnabled = true;
         var run = await Request().ExecuteAsync(user.Id, repository.Id, AnalysisScope.Repo, TestContext.Current.CancellationToken);
         await Run().ExecuteAsync(run.Id, TestContext.Current.CancellationToken);
-        _world.Analyses.All[0].Feedback.ShouldContain(f => f.Type == FeedbackType.Ai && f.Title == "Prioritise tests");
-
-        _world.Ai.Failure = new HttpRequestException("down");
-        var retry = await Request().ExecuteAsync(user.Id, repository.Id, AnalysisScope.Repo, TestContext.Current.CancellationToken);
-        await Run().ExecuteAsync(retry.Id, TestContext.Current.CancellationToken);
-        retry.Status.ShouldBe(AnalysisRunStatus.Succeeded);
-        _world.Analyses.All[1].Feedback.ShouldNotContain(f => f.Type == FeedbackType.Ai);
+        return run;
     }
 
     [Fact]

@@ -3,7 +3,7 @@ using DevInsight.Domain.Common;
 namespace DevInsight.Domain.Repositories;
 
 /// <summary>A GitHub repository imported by a user.</summary>
-public sealed class Repository
+public sealed class Repository : IUserOwned
 {
     private Repository() { }
 

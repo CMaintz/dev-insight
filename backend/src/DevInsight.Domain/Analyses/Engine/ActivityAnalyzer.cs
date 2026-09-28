@@ -12,44 +12,51 @@ public static class ActivityAnalyzer
     private const int RecentWeeks = 12;
     private const int ConsistencyWeeks = 26;
     private const double TargetCommitsPerWeek = 3;
+    private const MetricCategory Category = MetricCategory.Activity;
 
-    public static IReadOnlyList<AnalysisMetric> Analyze(IReadOnlyList<CommitRecord> commits, DateTimeOffset now)
+    public static IReadOnlyList<AnalysisMetric> Analyze(IReadOnlyList<CommitRecord> commits, DateTimeOffset now) =>
+        commits.Count == 0 ? NoActivity() : Metrics(ActivityFacts.Of(commits, now));
+
+    private static IReadOnlyList<AnalysisMetric> Metrics(ActivityFacts facts) =>
+    [
+        AnalysisMetric.Info(MetricKeys.TotalCommits, Category, facts.TotalCommits),
+        AnalysisMetric.Scored(MetricKeys.DaysSinceLastCommit, Category, facts.DaysSinceLast,
+            Scoring.LinearDecay(facts.DaysSinceLast, best: 7, worst: 365), 0.4),
+        AnalysisMetric.Scored(MetricKeys.CommitsPerWeekRecent, Category, facts.PerWeekRecent,
+            100 * facts.PerWeekRecent / TargetCommitsPerWeek, 0.3),
+        AnalysisMetric.Scored(MetricKeys.ActiveWeeksRatio, Category, facts.ActiveRatio, 100 * facts.ActiveRatio, 0.3),
+        AnalysisMetric.Info(MetricKeys.CommitsPerWeekLifetime, Category, facts.PerWeekLifetime),
+        AnalysisMetric.Info(MetricKeys.IsDormant, Category, facts.DaysSinceLast > DormantAfterDays ? 1 : 0),
+    ];
+
+    private static IReadOnlyList<AnalysisMetric> NoActivity() =>
+    [
+        AnalysisMetric.Info(MetricKeys.TotalCommits, Category, 0),
+        AnalysisMetric.Scored(MetricKeys.DaysSinceLastCommit, Category, 0, 0, 0.4),
+        AnalysisMetric.Scored(MetricKeys.CommitsPerWeekRecent, Category, 0, 0, 0.3),
+        AnalysisMetric.Scored(MetricKeys.ActiveWeeksRatio, Category, 0, 0, 0.3),
+    ];
+
+    /// <summary>The measurements behind the activity metrics, for a non-empty commit list.</summary>
+    private sealed record ActivityFacts(int TotalCommits, double DaysSinceLast, double PerWeekRecent, double PerWeekLifetime, double ActiveRatio)
     {
-        const MetricCategory category = MetricCategory.Activity;
-        if (commits.Count == 0)
+        public static ActivityFacts Of(IReadOnlyList<CommitRecord> commits, DateTimeOffset now)
         {
-            return
-            [
-                AnalysisMetric.Info(MetricKeys.TotalCommits, category, 0),
-                AnalysisMetric.Scored(MetricKeys.DaysSinceLastCommit, category, 0, 0, 0.4),
-                AnalysisMetric.Scored(MetricKeys.CommitsPerWeekRecent, category, 0, 0, 0.3),
-                AnalysisMetric.Scored(MetricKeys.ActiveWeeksRatio, category, 0, 0, 0.3),
-            ];
+            var recentCommits = commits.Count(c => c.AuthoredAt >= now.AddDays(-7 * RecentWeeks));
+            var lifetimeWeeks = Math.Max(1, (now - commits.Min(c => c.AuthoredAt)).TotalDays / 7);
+            return new ActivityFacts(
+                commits.Count,
+                Math.Max(0, (now - commits.Max(c => c.AuthoredAt)).TotalDays),
+                recentCommits / (double)RecentWeeks,
+                commits.Count / lifetimeWeeks,
+                Math.Min(1, ActiveWeeks(commits, now) / (double)ConsistencyWeeks));
         }
 
-        var last = commits.Max(c => c.AuthoredAt);
-        var first = commits.Min(c => c.AuthoredAt);
-        var daysSinceLast = Math.Max(0, (now - last).TotalDays);
-        var recentCommits = commits.Count(c => c.AuthoredAt >= now.AddDays(-7 * RecentWeeks));
-        var perWeekRecent = recentCommits / (double)RecentWeeks;
-        var lifetimeWeeks = Math.Max(1, (now - first).TotalDays / 7);
-        var activeWeeks = commits
-            .Where(c => c.AuthoredAt >= now.AddDays(-7 * ConsistencyWeeks))
-            .Select(c => Weeks.StartOf(c.AuthoredAt))
-            .Distinct()
-            .Count();
-        var activeRatio = Math.Min(1, activeWeeks / (double)ConsistencyWeeks);
-
-        return
-        [
-            AnalysisMetric.Info(MetricKeys.TotalCommits, category, commits.Count),
-            AnalysisMetric.Scored(MetricKeys.DaysSinceLastCommit, category, daysSinceLast,
-                Scoring.LinearDecay(daysSinceLast, best: 7, worst: 365), 0.4),
-            AnalysisMetric.Scored(MetricKeys.CommitsPerWeekRecent, category, perWeekRecent,
-                100 * perWeekRecent / TargetCommitsPerWeek, 0.3),
-            AnalysisMetric.Scored(MetricKeys.ActiveWeeksRatio, category, activeRatio, 100 * activeRatio, 0.3),
-            AnalysisMetric.Info(MetricKeys.CommitsPerWeekLifetime, category, commits.Count / lifetimeWeeks),
-            AnalysisMetric.Info(MetricKeys.IsDormant, category, daysSinceLast > DormantAfterDays ? 1 : 0),
-        ];
+        private static int ActiveWeeks(IReadOnlyList<CommitRecord> commits, DateTimeOffset now) =>
+            commits
+                .Where(c => c.AuthoredAt >= now.AddDays(-7 * ConsistencyWeeks))
+                .Select(c => Weeks.StartOf(c.AuthoredAt))
+                .Distinct()
+                .Count();
     }
 }
