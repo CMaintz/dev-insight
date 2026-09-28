@@ -1,0 +1,57 @@
+# Foundry verb interface — .NET backend. See https://github.com/CMaintz/foundry (CONTRACT.md).
+# Callers run verbs (`mise run gate`), never the tools directly.
+
+[tools]
+dotnet = "10.0.401"
+
+[env]
+# foundry-verb-wrap (telemetry) lives in the repository-level scripts/ folder.
+_.path = ["{{config_root}}/../scripts"]
+FOUNDRY_TELEMETRY = "{{config_root}}/../.foundry/telemetry.jsonl"
+DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+DOTNET_NOLOGO = "1"
+
+[tasks.fix]
+description = "Auto-format (dotnet format)"
+run = "dotnet format DevInsight.slnx"
+
+[tasks.lint]
+description = "Formatting, code style and naming rules (.editorconfig)"
+run = "dotnet format DevInsight.slnx --verify-no-changes"
+
+[tasks.typecheck]
+description = "Compile + Roslyn analyzers + NuGet audit, warnings as errors"
+run = "dotnet build DevInsight.slnx -warnaserror"
+
+[tasks.test]
+description = "All test projects + merged line-coverage floor (needs Docker or DEVINSIGHT_TEST_POSTGRES for the API tests)"
+# coverlet.MTP has no threshold option yet, so the reports are merged with ReportGenerator
+# and the floor is checked here. Coverage counts DevInsight.* only; EF migrations are generated.
+run = '''
+set -eu
+floor=75
+rm -rf TestResults
+dotnet test --solution DevInsight.slnx --no-build --results-directory "$PWD/TestResults" \
+  --coverlet --coverlet-output-format cobertura --coverlet-include "[DevInsight.*]*" \
+  --coverlet-exclude-by-file "**/Migrations/*.cs"
+dotnet tool restore > /dev/null
+dotnet reportgenerator "-reports:TestResults/coverage.cobertura.*.xml" "-targetdir:TestResults/report" \
+  -reporttypes:TextSummary > /dev/null
+line=$(grep -m1 "Line coverage:" TestResults/report/Summary.txt | grep -o "[0-9.]*" | head -1)
+echo "Line coverage: ${line}% (floor ${floor}%)"
+awk -v l="$line" -v f="$floor" 'BEGIN { exit !(l >= f) }' || { echo "Coverage is below the ${floor}% floor."; exit 1; }
+'''
+
+[tasks.audit]
+description = "Vulnerable NuGet packages, including transitive ones"
+# `dotnet list --vulnerable` exits 0 even with findings, so fail when the report names one.
+run = "! dotnet list DevInsight.slnx package --vulnerable --include-transitive 2>&1 | grep -q 'has the following vulnerable'"
+
+[tasks.gate]
+description = "The oracle: lint -> typecheck -> test -> audit, sequentially."
+run = [
+    "foundry-verb-wrap lint      -- mise run lint",
+    "foundry-verb-wrap typecheck -- mise run typecheck",
+    "foundry-verb-wrap test      -- mise run test",
+    "foundry-verb-wrap audit     -- mise run audit",
+]

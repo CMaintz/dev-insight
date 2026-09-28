@@ -18,8 +18,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
    (5 near-duplicates). I read them all: the *Master Specification* already consolidates the other 7, and
    nothing in the copies is missing from it. I did not commit or delete them. *Suggestion:* keep only the
    Master Specification (maybe as Markdown under `docs/`) and delete the copies.
-5. ⚙️ **Foundry CI wiring is deferred** until the `.NET` stack lands in Foundry (PR #29 `feat(dotnet)` was
-   open at the time of writing), per your request. `mise.toml` currently pins tools only.
+5. ⚙️ **Foundry wired after its .NET stack merged** (see §Foundry).
 6. ⚙️ **Parallel build.** The Angular frontend was built by a sub-agent against `docs/API.md` while the
    backend was written; its own decisions are merged in §Frontend below.
 
@@ -185,3 +184,29 @@ Every frontend decision (libraries, patterns, UX, charts, CSP and cross-origin a
 is in [`DECISIONS-frontend.md`](DECISIONS-frontend.md), written by the agent that built it. Highlights to review:
 score bands (≥75 Strong / ≥50 Fair), per-repo "Analyse" starts both scopes, ngx-charts with text summaries and
 data-table twins for every chart, token cleared on a 401 from the session probe.
+
+## Foundry
+
+63. ⚙️ **Reusable workflows pinned to Foundry commit `9a9f41d`** (main right after PR #29) — the .NET stack is
+    not in a release tag yet (v2.1.0 predates it). Move to the next `v2.x` tag once release-please cuts it.
+64. ⚙️ **Two packages, one oracle.** `backend/mise.toml` and `frontend/mise.toml` each define the six verbs;
+    the root `mise.toml` runs each verb in both. CI calls the gate facade once per package
+    (`stack: dotnet` / `stack: ts`). Toolchains are pinned per package, so the backend job doesn't install Node.
+65. ⚙️ **Frontend verbs delegate to npm scripts** (`npm run lint` = `ng lint` + Prettier, `npm test` =
+    `ng test` with coverage thresholds) rather than calling eslint/vitest directly as Foundry's TS template does —
+    Angular's builders own those invocations.
+66. ⚙️ **Backend coverage floor = 75 % merged line coverage** of `DevInsight.*` (migrations excluded).
+    coverlet.MTP has no threshold option yet, so the `test` verb merges the Cobertura reports with ReportGenerator
+    and checks the floor itself. Measured: 59.6 % *without* the PostgreSQL integration tests (API layer 0 %) —
+    the floor assumes they run, which CI guarantees and local runs need Docker for.
+67. ⚙️ **habit-hooks**: backend uses the generic preset (file length) with migrations excluded — currently clean.
+    Frontend uses the TypeScript preset; its sensors (knip, ts-morph, jscpd) became pinned devDependencies.
+    Their first run reported 190 findings in the new frontend (unused exports, test-only code, duplication,
+    comment noise); these are being **fixed rather than baselined** since the code is brand new.
+68. ⚙️ **Foundry bug found:** `foundry-init.sh` generates `concurrency: { group: gate-${{ github.ref }}, … }`.
+    `${{ }}` inside a YAML flow mapping is invalid per the YAML spec (PyYAML rejects it); ours uses block style.
+    Not verified whether GitHub's parser tolerates it — worth fixing upstream either way.
+69. ⚙️ **`AGENTS.md` (canonical) + `CLAUDE.md` (`@AGENTS.md`)**, per Foundry's convention: only what an agent
+    can't discover from the repo — the oracle, the invariants, the decision-log rule.
+70. ⚙️ **foundry-init side effect:** it set the *global* mise setting `windows_default_inline_shell_args = bash -c`
+    on your machine (Foundry's intended Windows setup).

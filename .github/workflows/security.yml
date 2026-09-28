@@ -1,0 +1,15 @@
+# Foundry security facade: secret scan (gitleaks) + ruleset-guard + diff-aware SAST (semgrep).
+name: security
+on: { pull_request: {}, push: { branches: [main] } }
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+permissions: { contents: read }
+jobs:
+  security:
+    uses: CMaintz/foundry/.github/workflows/security.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36 # main after PR #29
+    with:
+      # Gate-defining files: changing these together with production source needs the ruleset-change label.
+      ruleset_paths: '^(mise\.toml|backend/mise\.toml|frontend/mise\.toml|\.editorconfig|backend/Directory\.Build\.props|backend/\.habit-hooks/|frontend/\.habit-hooks/|frontend/eslint\.config\.js|frontend/\.prettierrc|frontend/\.jscpd\.json|frontend/angular\.json|\.github/workflows/(gate|security|ratchet|bootstrap)\.yml)'
+      source_paths: '^(backend/src|frontend/src)/'
+      test_paths: '(\.(test|spec)\.[jt]sx?|Tests?\.cs|/tests/.*\.cs|/src/testing/.*)$'

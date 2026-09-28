@@ -1,0 +1,19 @@
+# Regenerates each package's habit-hooks snooze baseline on Linux and opens a PR (prune-only once it exists).
+name: bootstrap
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 6 * * *'
+jobs:
+  backend:
+    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36
+    with:
+      working_directory: backend
+      habit_hooks_plugin: habit-hooks-generic
+    permissions: { contents: write, pull-requests: write }
+  frontend:
+    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36
+    with:
+      working_directory: frontend
+      habit_hooks_plugin: habit-hooks-typescript
+    permissions: { contents: write, pull-requests: write }

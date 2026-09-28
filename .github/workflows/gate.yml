@@ -1,0 +1,20 @@
+# Foundry gate (https://github.com/CMaintz/foundry): the same six verbs as `mise run gate`, per package.
+# Pinned to the commit that added the .NET stack (not yet in a release tag). Require both
+# `gate-ok` checks in branch protection.
+name: gate
+on: { pull_request: {}, push: { branches: [main] } }
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+permissions: { contents: read }
+jobs:
+  backend:
+    uses: CMaintz/foundry/.github/workflows/gate.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36 # main after PR #29 (.NET stack)
+    with:
+      stack: dotnet
+      working_directory: backend
+  frontend:
+    uses: CMaintz/foundry/.github/workflows/gate.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36 # main after PR #29 (.NET stack)
+    with:
+      stack: ts
+      working_directory: frontend
