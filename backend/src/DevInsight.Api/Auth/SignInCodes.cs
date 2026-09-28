@@ -13,6 +13,7 @@ namespace DevInsight.Api.Auth;
 public sealed class SignInCodes(IMemoryCache cache)
 {
     private static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(60);
+    private readonly Lock _redeemLock = new();
 
     public string Issue(Guid userId)
     {
@@ -24,13 +25,22 @@ public sealed class SignInCodes(IMemoryCache cache)
     /// <summary>The user the code was issued for, or null if it is unknown, expired or already used.</summary>
     public Guid? Redeem(string? code)
     {
-        if (string.IsNullOrEmpty(code) || !cache.TryGetValue(Key(code), out Guid userId))
+        if (string.IsNullOrEmpty(code))
         {
             return null;
         }
 
-        cache.Remove(Key(code));
-        return userId;
+        // Check-and-remove must be atomic, or two concurrent exchanges could both redeem one code.
+        lock (_redeemLock)
+        {
+            if (!cache.TryGetValue(Key(code), out Guid userId))
+            {
+                return null;
+            }
+
+            cache.Remove(Key(code));
+            return userId;
+        }
     }
 
     private static string Key(string code) => $"signin-code:{code}";

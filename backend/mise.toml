@@ -44,8 +44,14 @@ awk -v l="$line" -v f="$floor" 'BEGIN { exit !(l >= f) }' || { echo "Coverage is
 
 [tasks.audit]
 description = "Vulnerable NuGet packages, including transitive ones"
-# `dotnet list --vulnerable` exits 0 even with findings, so fail when the report names one.
-run = "! dotnet list DevInsight.slnx package --vulnerable --include-transitive 2>&1 | grep -q 'has the following vulnerable'"
+# `dotnet list --vulnerable` exits 0 even with findings, so fail when the report names one —
+# and fail too if the listing itself fails, so a broken audit can never pass silently.
+run = '''
+set -eu
+report=$(dotnet list DevInsight.slnx package --vulnerable --include-transitive 2>&1) || { echo "$report"; exit 1; }
+if echo "$report" | grep -q 'has the following vulnerable'; then echo "$report"; exit 1; fi
+echo "No vulnerable packages."
+'''
 
 [tasks.gate]
 description = "The oracle: lint -> typecheck -> test -> audit, sequentially."

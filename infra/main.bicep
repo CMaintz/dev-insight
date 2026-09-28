@@ -77,7 +77,7 @@ resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
-resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = if (deployPostgres) {
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-08-01' = if (deployPostgres) {
   name: postgresServerName
   location: location
   sku: {
@@ -94,13 +94,13 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = if (d
   }
 }
 
-resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = if (deployPostgres) {
+resource database 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2025-08-01' = if (deployPostgres) {
   parent: postgres
   name: name
 }
 
 // 0.0.0.0 = "allow Azure services": Container Apps has no fixed outbound IP on the consumption plan.
-resource allowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (deployPostgres) {
+resource allowAzure 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-08-01' = if (deployPostgres) {
   parent: postgres
   name: 'AllowAzureServices'
   properties: {
@@ -133,13 +133,15 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'api'
           image: image
-          resources: { cpu: json('0.5'), memory: '1Gi' }
+          resources: { cpu: json('1.0'), memory: '2Gi' }
           env: concat([
             { name: 'ConnectionStrings__DevInsight', secretRef: 'db-connection' }
             { name: 'GitHub__ClientId', secretRef: 'github-client-id' }
             { name: 'GitHub__ClientSecret', secretRef: 'github-client-secret' }
             { name: 'Jwt__SigningKey', secretRef: 'jwt-signing-key' }
             { name: 'Frontend__Url', value: frontendUrl }
+            // One clone/analysis at a time keeps memory and ephemeral disk bounded on one small replica.
+            { name: 'AnalysisWorker__MaxConcurrency', value: '1' }
             // The callback lives on the API's own ingress FQDN.
             { name: 'GitHub__CallbackUrl', value: 'https://ca-${name}-api.${environment.properties.defaultDomain}/api/auth/github/callback' }
           ], aiEnv)

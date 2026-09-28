@@ -1,5 +1,4 @@
-# Starter gitleaks config. Copy to a repo root as .gitleaks.toml and point the
-# secret-scan job at it (GITLEAKS_CONFIG env var — tier0.yml wires this).
+# gitleaks config for the Foundry security workflow's secret scan.
 #
 # CRITICAL: secrets are NOT ratcheted. A real leaked secret is remediated
 # (rotate, then purge from history), never allowlisted. Only add a path here once

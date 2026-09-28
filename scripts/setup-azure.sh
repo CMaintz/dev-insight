@@ -184,7 +184,7 @@ finish() {
 # Run from the repository root:  bash scripts/setup-azure.sh
 # ──────────────────────────────────────────────────────────────────────────
 
-ENV_FILE="${ENV_FILE:-.env.azure}"   # local only (git-ignored); holds the values used to (re)deploy
+ENV_FILE="${DEVINSIGHT_ENV_FILE:-.env.azure}"   # local only (git-ignored); deliberately not the local-dev .env
 REPO="CMaintz/DevInsight"
 FRONTEND_URL="https://cmaintz.github.io/DevInsight"
 IMAGE="ghcr.io/cmaintz/devinsight-api:latest"
@@ -279,10 +279,16 @@ pause
 stage "Let GitHub Actions deploy to Azure (OIDC, no stored secret)"
 say "Creates an Entra app registration trusted only for the 'production' environment of $REPO,"
 say "with Contributor rights on $AZURE_RESOURCE_GROUP only."
+# Each piece is created only if missing, so re-running repairs a partial earlier run.
 AZURE_CLIENT_ID=$(az ad app list --display-name "github-devinsight-deploy" --query "[0].appId" -o tsv)
 if [[ -z "$AZURE_CLIENT_ID" ]]; then
   AZURE_CLIENT_ID=$(az ad app create --display-name "github-devinsight-deploy" --query appId -o tsv)
-  az ad sp create --id "$AZURE_CLIENT_ID" --output none
+fi
+SP_OBJECT_ID=$(az ad sp list --filter "appId eq '$AZURE_CLIENT_ID'" --query "[0].id" -o tsv)
+if [[ -z "$SP_OBJECT_ID" ]]; then
+  SP_OBJECT_ID=$(az ad sp create --id "$AZURE_CLIENT_ID" --query id -o tsv)
+fi
+if [[ -z "$(az ad app federated-credential list --id "$AZURE_CLIENT_ID" --query "[?name=='github-production'].name" -o tsv)" ]]; then
   az ad app federated-credential create --id "$AZURE_CLIENT_ID" --output none --parameters "{
     \"name\": \"github-production\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
@@ -290,8 +296,23 @@ if [[ -z "$AZURE_CLIENT_ID" ]]; then
     \"audiences\": [\"api://AzureADTokenExchange\"]
   }"
 fi
-az role assignment create --assignee "$AZURE_CLIENT_ID" --role Contributor --output none \
-  --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP" 2>/dev/null || true
+# A new service principal takes a while to replicate: assign by object id (no Graph lookup) and retry.
+SCOPE="/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP"
+if [[ -z "$(az role assignment list --assignee "$SP_OBJECT_ID" --scope "$SCOPE" --role Contributor --query "[0].id" -o tsv)" ]]; then
+  for attempt in 1 2 3 4 5 6; do
+    if az role assignment create --assignee-object-id "$SP_OBJECT_ID" --assignee-principal-type ServicePrincipal \
+      --role Contributor --scope "$SCOPE" --output none; then
+      break
+    fi
+    if [[ "$attempt" == 6 ]]; then
+      warn "Could not grant Contributor on $AZURE_RESOURCE_GROUP; fix the error above and re-run the wizard."
+      exit 1
+    fi
+    note "Waiting for the service principal to replicate (attempt $attempt of 6)..."
+    sleep 20
+  done
+fi
+printf '  %s✓%s Contributor on %s\n' "$GREEN" "$RESET" "$AZURE_RESOURCE_GROUP"
 write_env AZURE_CLIENT_ID "$AZURE_CLIENT_ID"
 set_var AZURE_CLIENT_ID "$AZURE_CLIENT_ID"
 set_var AZURE_TENANT_ID "$AZURE_TENANT_ID"
@@ -342,6 +363,11 @@ pause
 # ── 8 ─────────────────────────────────────────────────────────────────────
 stage "Apply the OAuth credentials"
 deploy_infra "$IMAGE"
+# Changing only secret values creates no new revision and running replicas keep the old values,
+# so start a new revision to make the credentials take effect now.
+az extension add --name containerapp --upgrade --only-show-errors
+az containerapp update --name ca-devinsight-api --resource-group "$AZURE_RESOURCE_GROUP" \
+  --revision-suffix "oauth$(date +%s)" --output none
 curl -fsS "$API_URL/health" >/dev/null && printf '  %s✓%s API is healthy\n' "$GREEN" "$RESET" \
   || warn "Health check failed (a cold start can take a minute); retry: curl $API_URL/health"
 pause

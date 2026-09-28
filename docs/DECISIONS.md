@@ -54,8 +54,8 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 18. 🏗 **Application read models are returned to the API and mapped to DTOs there** (`Contracts/Mapping.cs`);
     the wire contract is documented in `docs/API.md`.
 19. 🏗 **All API routes under `/api`** (the spec listed them without a prefix) so the SPA and API can share one origin.
-20. 🏗 **One container serves API + SPA** (`wwwroot`, SPA fallback). *Alt:* separate nginx container.
-    *Why:* same-origin ⇒ first-party cookies, no CORS, one thing to deploy.
+20. 🏗 **The API can also serve the SPA** (`wwwroot`, SPA fallback) — used by the single-container Docker setup.
+    *Superseded for production* by GitHub Pages + Azure (see #46, #55): the SPA is cross-origin there.
 21. 🏗 **Analyses run in the background.** `POST /analysis/run` returns **202 + a run id** to poll; an in-process
     `Channel` queue feeds a `BackgroundService` (2 concurrent runs). Runs are persisted first and re-queued on
     restart. Requests are idempotent per repo+scope while one is pending. *Alt:* synchronous (cloning can take
@@ -96,10 +96,14 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Feedback
 
-34. 🧭 **Rule set**: vague commits, very large commits, dormant project, consistent activity, monolith, large files,
-    good separation, missing/thin/strong tests, missing README / lint / CI, no attributed commits. UC4's
-    "at least two items incl. commit + structure feedback" is guaranteed: those two rules always emit either a
-    problem **or a strength**.
+34. 🧭 **Rule set** (thresholds are judgement calls, all in `Domain/Analyses/Rules`):
+    vague commits ≥ 30 % HIGH, ≥ 10 % MEDIUM, else a strength · very large commits when ≥ 20 % change ≥ 1,000 lines
+    (MEDIUM) · dormant after 180 days (MEDIUM) · consistent activity when ≥ 50 % of the last 26 weeks are active
+    (strength) · monolith HIGH · files > 500 lines MEDIUM · good separation (strength) · no tests HIGH, < 10 % test
+    files MEDIUM, ≥ 20 % a strength · missing README MEDIUM · missing lint / CI LOW · no attributed commits HIGH.
+    UC4's "at least two items incl. commit + structure feedback" holds **whenever the scope has commits and source
+    files**: those two rules then always emit a problem or a strength. An analysis with no commits (e.g. a
+    contribution scope with nothing attributed) instead gets the "no commits" finding explaining why.
 35. 🧭 **Strengths are first-class** (`isStrength`), not a fourth severity. The spec only had LOW/MEDIUM/HIGH.
 36. 🧭 **AI feedback is implemented but optional** (enabled by `AiFeedback__ApiKey`). Model **`claude-opus-5`**,
     structured JSON output, at most 5 findings, grounded only in the stored metrics/files/rule findings, never
@@ -109,7 +113,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Product
 
-37. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
+36a. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
     with "portfolio publish". Owners can preview their unpublished portfolio.
 37. 🧭 **Public portfolio shows strengths only**; improvement feedback stays on the private dashboard.
 38. 🧭 **Private repositories never appear on the public portfolio**, even when selected; project links to hidden
@@ -141,9 +145,10 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
     ⚠️ *Trade-off:* the key ring itself is **not** encrypted and sits in the same database as the tokens, so a full
     database leak exposes both. Upgrade path: `ProtectKeysWithAzureKeyVault` (Key Vault + managed identity).
 49. 🔒 **Other users' resources return 404, never 403** (no ID probing). Tested.
-50. 🔒 **Rate limits**: 30 analysis requests / 5 imports per user per minute.
-51. 🔒 **Security headers + CSP** (`script-src 'self'`; Google Fonts allowed for styles/fonts; `/scalar` exempt
-    because it loads from a CDN). Forwarded headers are trusted from any proxy (container platforms), so cookies
+50. 🔒 **Rate limits** per user (or IP when anonymous) per minute: 30 analysis requests, 5 imports, 20 sign-in
+    code exchanges. Also: the dashboard shows the 8 most severe improvement items; the runs list returns the latest 50.
+51. 🔒 **Security headers + CSP** (`script-src 'self'`, no external origins; `/scalar` exempt because it loads
+    from a CDN). Forwarded headers are trusted from any proxy (container platforms), so cookies
     get `Secure` behind TLS termination.
 
 ## Tooling & verification
@@ -210,3 +215,31 @@ data-table twins for every chart, token cleared on a 401 from the session probe.
     can't discover from the repo — the oracle, the invariants, the decision-log rule.
 70. ⚙️ **foundry-init side effect:** it set the *global* mise setting `windows_default_inline_shell_args = bash -c`
     on your machine (Foundry's intended Windows setup).
+
+## Added after the code review
+
+71. 🧰 **Container size 1 vCPU / 2 GiB with one analysis at a time** (`AnalysisWorker__MaxConcurrency=1` in Azure).
+    *Alt:* 0.5 vCPU / 1 GiB with two concurrent runs — too tight for two 500 MB clones plus 5,000-commit logs.
+72. 🔒 **PostgreSQL firewall allows "Azure services" (0.0.0.0)** because Container Apps on the consumption plan has
+    no fixed outbound IP. That admits any Azure-hosted client, *including other tenants*, to attempt a login — the
+    strong generated password is the only barrier. *Upgrade:* VNet-integrated Container Apps environment + private
+    PostgreSQL (costs more), or Microsoft Entra authentication. Supabase/Neon have the same property (internet-reachable).
+73. 🧰 **Azure extras:** Log Analytics (PerGB2018, 30-day retention) for container logs; PostgreSQL 32 GB storage,
+    7-day backups, no HA/geo-backup; liveness probe on `/health`; every deploy pushes the commit-SHA tag **and**
+    `:latest` — the rollout uses the SHA, `:latest` only seeds the first infrastructure deploy.
+74. ⚙️ **Deploy workflows skip (with a notice) until Azure is configured**, instead of failing red on the first
+    push to `main`.
+75. ⚙️ **Foundry extras copied in with the scaffold:** `renovate.json` (Renovate keeps pinned actions, mise
+    tools and packages current — needs the Renovate GitHub app installed to do anything); `bootstrap.yml` runs
+    daily at 06:00 UTC and opens a PR only when the habit-hooks baseline can shrink; `scripts/foundry-verb-wrap`
+    records per-verb timings in the git-ignored `.foundry/telemetry.jsonl` (`scripts/foundry-loop-report` reads it);
+    `scripts/ruleset_guard.py` backs the security workflow's ruleset-guard, whose gate-defining paths are listed in
+    `security.yml` (mise files, `.editorconfig`, `Directory.Build.props`, lint/format/habit-hooks configs,
+    `angular.json`, the Foundry workflows).
+76. ⚙️ **Frontend audit fails on any advisory** (`npm audit --audit-level=low`), matching the backend. There were
+    none at any level when this was set.
+77. 🔒 **Known, accepted:** the one-time sign-in code is not bound to the browser that started the OAuth round trip,
+    so an attacker could plant *their own* 60-second code on a victim ("login CSRF" — the victim would be signed in
+    as the attacker). Low impact here (no payment or private data flows into the attacker's account). *Fix if
+    needed:* issue a nonce with the login redirect, keep it in `sessionStorage`, and require it at `/exchange`.
+78. 🧰 **PostgreSQL ARM API `2025-08-01`** — the first stable version whose schema lists PostgreSQL 17.

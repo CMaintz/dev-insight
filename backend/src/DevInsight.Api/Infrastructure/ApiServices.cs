@@ -93,8 +93,8 @@ internal static class ApiServices
 internal static class SecurityHeaders
 {
     private const string ContentSecurityPolicy =
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        + "font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self'; "
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        + "font-src 'self'; img-src 'self' https: data:; connect-src 'self'; "
         + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>

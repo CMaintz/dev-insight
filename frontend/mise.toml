@@ -25,8 +25,8 @@ description = "Vitest with the coverage thresholds from angular.json + build-scr
 run = "npm test"
 
 [tasks.audit]
-description = "Dependency vulnerabilities (critical)"
-run = "npm audit --audit-level=critical"
+description = "Dependency vulnerabilities (any severity, like the backend audit)"
+run = "npm audit --audit-level=low"
 
 [tasks.gate]
 description = "The oracle: lint -> typecheck -> test -> audit, sequentially."

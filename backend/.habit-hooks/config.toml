@@ -1,4 +1,3 @@
-# Copy to <repo>/.habit-hooks/config.toml
 # There's no habit-hooks .NET sensor yet, so structural analysis comes from Roslyn
 # analyzers in `typecheck` (`dotnet build -warnaserror`). habit-hooks contributes only
 # the language-independent `generic` plugin — file-length (below) and, opt-in, jscpd.
@@ -7,10 +6,7 @@ plugins = ["generic"]
 # Tests and generated EF Core migrations are not smell-scanned.
 files = ["**/*.cs", "!**/*Tests/**", "!**/*Tests.cs", "!**/*.Test.cs", "!**/Migrations/**", "!**/bin/**", "!**/obj/**"]
 
-# File-length: flag files over 300 lines (oversized-file). 300 rather than the
-# sensor default of 200 — verbose-but-cohesive files (esp. Java) legitimately pass
-# 200, and this is a ratcheted coaching signal, not a hard wall. Config/data/prose
-# are already excluded by the `files` globs; keep big prompts in their own resource file.
+# File-length: flag files over 300 lines (oversized-file) — Foundry's default for cohesive files.
 [sensors.line-count]
 args = ["--max", "300"]
 
