@@ -51,7 +51,7 @@ public sealed class FrontendOptions
     public const string Section = "Frontend";
 
     /// <summary>
-    /// Absolute URL of the SPA when it is hosted on another origin (e.g. https://cmaintz.github.io/DevInsight).
+    /// Absolute URL of the SPA when it is hosted on another origin (e.g. https://cmaintz.github.io/dev-insight).
     /// Empty when the API serves the SPA itself.
     /// </summary>
     public string Url { get; set; } = string.Empty;

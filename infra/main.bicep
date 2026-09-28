@@ -14,7 +14,7 @@ param location string = resourceGroup().location
 @description('Container image, e.g. ghcr.io/cmaintz/devinsight-api:latest. Updated on every deploy by CI.')
 param image string
 
-@description('Public URL of the SPA, e.g. https://cmaintz.github.io/DevInsight (CORS + post-login redirect).')
+@description('Public URL of the SPA, e.g. https://cmaintz.github.io/dev-insight (CORS + post-login redirect).')
 param frontendUrl string
 
 @description('Create an Azure Database for PostgreSQL Flexible Server. False = bring your own (Supabase, Neon, …).')

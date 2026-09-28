@@ -8,7 +8,7 @@ import { writeSpaFallback } from './spa-fallback.mjs';
 test('copies index.html to an identical 404.html and adds .nojekyll', () => {
   const dir = mkdtempSync(join(tmpdir(), 'spa-fallback-'));
   try {
-    const html = '<!doctype html><base href="/DevInsight/"><app-root></app-root>';
+    const html = '<!doctype html><base href="/dev-insight/"><app-root></app-root>';
     writeFileSync(join(dir, 'index.html'), html);
     writeSpaFallback(dir);
     assert.equal(readFileSync(join(dir, '404.html'), 'utf8'), html);

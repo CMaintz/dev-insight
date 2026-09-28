@@ -22,7 +22,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private PostgreSqlContainer? _postgres;
     private string? _connectionString;
 
-    public const string FrontendUrl = "https://cmaintz.github.io/DevInsight";
+    public const string FrontendUrl = "https://cmaintz.github.io/dev-insight";
 
     public string? UnavailableReason { get; private set; }
     public FakeGitHub GitHub { get; } = new();

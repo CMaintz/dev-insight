@@ -1,7 +1,7 @@
 # Deployment
 
 ```
-Browser ──► GitHub Pages ─ https://cmaintz.github.io/DevInsight/   (Angular SPA, static)
+Browser ──► GitHub Pages ─ https://cmaintz.github.io/dev-insight/   (Angular SPA, static)
    │
    └─────► Azure Container Apps ─ https://ca-devinsight-api.<env>.azurecontainerapps.io
               (ASP.NET Core API + background analysis worker, image from ghcr.io)
@@ -32,7 +32,7 @@ The SPA and API are on different sites, so cookies would be third-party and bloc
 
 1. SPA → `GET {api}/api/auth/github/login?returnUrl=/dashboard` (full-page navigation).
 2. GitHub → `{api}/api/auth/github/callback` → the API redirects to
-   `https://cmaintz.github.io/DevInsight/auth/callback?code=<one-time code>&returnUrl=…`.
+   `https://cmaintz.github.io/dev-insight/auth/callback?code=<one-time code>&returnUrl=…`.
 3. SPA → `POST {api}/api/auth/exchange {code}` → JWT, stored in `localStorage`, sent as `Authorization: Bearer`.
 
 The code is random, single-use and valid for 60 seconds. CORS allows only the configured frontend origin.

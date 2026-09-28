@@ -21,7 +21,7 @@ Each bullet: the choice → the alternative rejected, and why.
 
 ## Cross-origin deployment (GitHub Pages SPA + Azure API)
 
-- **Runtime config `public/config.json` (`{ "apiBaseUrl": "" }`)** is loaded by `provideAppInitializer` before bootstrap completes. It uses `fetch` relative to `document.baseURI`, so it resolves to `/DevInsight/config.json` on Pages, with `cache: no-store`. Any failure (missing file, HTTP error, bad JSON, missing or non-string `apiBaseUrl`, or a non-empty value that is not an http(s) URL) shows a full-page "Couldn't load app configuration" screen with a Reload button, and nothing calls the API. `""` stays a valid explicit same-origin value. Rejected silently falling back to same origin, because on Pages that sends API calls to the static host. The check applies in every build mode, since the dev server serves `config.json` too. Rejected build-time `environment.ts` because the Pages deploy must inject the API URL without a rebuild. Rejected `HttpClient` for the fetch because it would recurse through the interceptors.
+- **Runtime config `public/config.json` (`{ "apiBaseUrl": "" }`)** is loaded by `provideAppInitializer` before bootstrap completes. It uses `fetch` relative to `document.baseURI`, so it resolves to `/dev-insight/config.json` on Pages, with `cache: no-store`. Any failure (missing file, HTTP error, bad JSON, missing or non-string `apiBaseUrl`, or a non-empty value that is not an http(s) URL) shows a full-page "Couldn't load app configuration" screen with a Reload button, and nothing calls the API. `""` stays a valid explicit same-origin value. Rejected silently falling back to same origin, because on Pages that sends API calls to the static host. The check applies in every build mode, since the dev server serves `config.json` too. Rejected build-time `environment.ts` because the Pages deploy must inject the API URL without a rebuild. Rejected `HttpClient` for the fetch because it would recurse through the interceptors.
 - **Interceptor chain `[error, bearer, apiBaseUrl]`:**
   - The bearer interceptor only matches our relative `/api/…` and `/health` paths, and runs _before_ the base URL is applied, so the token can never reach a third-party URL (e.g. image hosts).
   - It never overrides an explicit `Authorization` header.
@@ -38,8 +38,8 @@ Each bullet: the choice → the alternative rejected, and why.
   - Failures (`?error=`, missing code, failed exchange) show "Sign-in failed" with a **Try again** button (restarts OAuth with the same return path) and a home link.
 - **`safeReturnUrl()`** accepts only paths starting with a single `/`. It rejects `//host`, `/\host` and absolute URLs, falling back to `/dashboard`. It is shared by sign-in and the callback.
 - **GitHub Pages build:**
-  - `angular.json` configuration `pages` sets only `baseHref: "/DevInsight/"`. Angular configs cannot "extend", so `build:pages` runs `ng build --configuration production,pages` to stack them.
-  - `scripts/spa-fallback.mjs` then copies `index.html` to an identical `404.html`, because Pages has no SPA fallback and deep links and `/DevInsight/auth/callback` would otherwise 404.
+  - `angular.json` configuration `pages` sets only `baseHref: "/dev-insight/"`. Angular configs cannot "extend", so `build:pages` runs `ng build --configuration production,pages` to stack them.
+  - `scripts/spa-fallback.mjs` then copies `index.html` to an identical `404.html`, because Pages has no SPA fallback and deep links and `/dev-insight/auth/callback` would otherwise 404.
   - The same script writes `.nojekyll`, so Jekyll never hides underscore-prefixed files.
   - The script is tested with `node --test`, which is chained into `npm test`.
 - **Base-href safety:**

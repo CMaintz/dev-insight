@@ -185,8 +185,8 @@ finish() {
 # ──────────────────────────────────────────────────────────────────────────
 
 ENV_FILE="${DEVINSIGHT_ENV_FILE:-.env.azure}"   # local only (git-ignored); deliberately not the local-dev .env
-REPO="CMaintz/DevInsight"
-FRONTEND_URL="https://cmaintz.github.io/DevInsight"
+REPO="CMaintz/dev-insight"
+FRONTEND_URL="https://cmaintz.github.io/dev-insight"
 IMAGE="ghcr.io/cmaintz/devinsight-api:latest"
 TOTAL_STAGES=9
 

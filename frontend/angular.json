@@ -62,7 +62,7 @@
               "sourceMap": true
             },
             "pages": {
-              "baseHref": "/DevInsight/"
+              "baseHref": "/dev-insight/"
             }
           },
           "defaultConfiguration": "production"

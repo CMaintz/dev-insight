@@ -1,4 +1,4 @@
-# Build the Angular SPA for https://cmaintz.github.io/DevInsight/ and publish it to GitHub Pages.
+# Build the Angular SPA for https://cmaintz.github.io/dev-insight/ and publish it to GitHub Pages.
 # Required repository variable: DEVINSIGHT_API_URL (the Container App URL, e.g. https://ca-devinsight-api.<env>.azurecontainerapps.io).
 name: deploy-pages
 

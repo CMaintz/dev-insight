@@ -8,8 +8,8 @@ function response(body: unknown, ok = true): Response {
 describe('loadAppConfig', () => {
   it('fetches config.json relative to the base href, bypassing the cache', async () => {
     const fetchFn = vi.fn().mockResolvedValue(response({ apiBaseUrl: 'https://api.example/' }));
-    const config = await loadAppConfig(fetchFn, 'https://cmaintz.github.io/DevInsight/');
-    expect(fetchFn).toHaveBeenCalledWith('https://cmaintz.github.io/DevInsight/config.json', {
+    const config = await loadAppConfig(fetchFn, 'https://cmaintz.github.io/dev-insight/');
+    expect(fetchFn).toHaveBeenCalledWith('https://cmaintz.github.io/dev-insight/config.json', {
       cache: 'no-store',
     });
     expect(config).toEqual({ apiBaseUrl: 'https://api.example' });

@@ -1,5 +1,5 @@
-// GitHub Pages has no SPA fallback: unknown paths (deep links such as /DevInsight/dashboard or
-// the OAuth return /DevInsight/auth/callback) are answered with 404.html. Making 404.html a copy
+// GitHub Pages has no SPA fallback: unknown paths (deep links such as /dev-insight/dashboard or
+// the OAuth return /dev-insight/auth/callback) are answered with 404.html. Making 404.html a copy
 // of index.html lets the Angular router take over. `.nojekyll` stops Pages from running Jekyll,
 // which would hide files whose names start with an underscore.
 import { copyFileSync, existsSync, writeFileSync } from 'node:fs';

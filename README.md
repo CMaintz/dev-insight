@@ -7,7 +7,7 @@ the opposite idea — show *how* someone develops, backed by data they can't fak
 GitHub repositories, measures activity, commit habits, structure and quality, turns those measurements
 into explainable scores and concrete feedback, and publishes the result as a living portfolio.
 
-- **Live:** https://cmaintz.github.io/DevInsight/ (once deployed)
+- **Live:** https://cmaintz.github.io/dev-insight/ (once deployed)
 - **Private dashboard** — scores, activity over time, score evolution, language mix, commit-size
   distribution, and the most important feedback across your repositories.
 - **Explainable analysis** — every score is the weighted sum of stored metrics; the UI shows each
