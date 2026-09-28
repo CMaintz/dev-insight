@@ -30,7 +30,7 @@
       </div>
     </dl>
   }
-  <ul class="pcard__meta list-reset" aria-label="Repository facts">
+  <app-repo-facts class="pcard__facts" [repo]="repo()">
     @for (lang of languages(); track lang) {
       <li class="chip">{{ lang }}</li>
     } @empty {
@@ -38,12 +38,5 @@
         <li class="chip">{{ repo().language }}</li>
       }
     }
-    <li>
-      <span aria-hidden="true">★</span> {{ stars() }}<span class="visually-hidden"> stars</span>
-    </li>
-    <li>
-      <span aria-hidden="true">⑂</span> {{ forks() }}<span class="visually-hidden"> forks</span>
-    </li>
-    <li>Active {{ active() }}</li>
-  </ul>
+  </app-repo-facts>
 </article>

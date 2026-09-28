@@ -12,7 +12,6 @@ export interface Toast {
 const AUTO_DISMISS_MS = 6000;
 const MAX_VISIBLE = 4;
 
-/** Minimal notification queue rendered by `ToastHost`. */
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private readonly items = signal<Toast[]>([]);

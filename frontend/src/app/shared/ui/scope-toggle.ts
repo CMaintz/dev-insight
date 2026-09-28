@@ -4,7 +4,6 @@ import { SCOPE_LABELS } from '../../core/scope/scope-preference';
 
 let nextId = 0;
 
-/** Segmented radio group: "Whole repository" vs "My contributions". */
 @Component({
   selector: 'app-scope-toggle',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -4,7 +4,6 @@ import { CATEGORY_LABELS } from '../format/metrics';
 
 const SEVERITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' } as const;
 
-/** One feedback card: strengths vs improvements, severity, category and an AI marker. */
 @Component({
   selector: 'app-feedback-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,7 +37,6 @@ const SEVERITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High' } as const;
 })
 export class FeedbackItem {
   readonly feedback = input.required<Feedback>();
-  /** Optional context such as the repository name. */
   readonly context = input('');
 
   protected readonly kind = computed(() =>

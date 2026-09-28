@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { ProfileApi } from '../../core/api/profile.api';
+import { resultOrNothing } from '../../core/http/surfaced-errors';
 import { SessionStore } from '../../core/auth/session.store';
 import { Profile, ProfileUpdate } from '../../core/models/api.models';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -61,17 +61,14 @@ export class SettingsPage {
       return;
     }
     this.saving.set(true);
-    try {
-      const profile = await firstValueFrom(
-        this.api.update(toProfileUpdate(this.form.getRawValue())),
-      );
+    const profile = await resultOrNothing(
+      this.api.update(toProfileUpdate(this.form.getRawValue())),
+    );
+    this.saving.set(false);
+    if (profile) {
       this.session.setProfile(profile);
       this.form.markAsPristine();
       this.toasts.success('Profile saved');
-    } catch {
-      // Surfaced by the interceptor.
-    } finally {
-      this.saving.set(false);
     }
   }
 }

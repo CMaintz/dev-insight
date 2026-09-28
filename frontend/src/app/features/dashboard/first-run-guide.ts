@@ -8,15 +8,14 @@ export interface FirstRunProgress {
   isPortfolioPublic: boolean;
 }
 
-export interface GuideStep {
+interface GuideStep {
   key: 'import' | 'select' | 'analyse' | 'view' | 'publish';
   title: string;
   text: string;
   done: boolean;
 }
 
-/** The onboarding path: import → select → analyse → view → publish. */
-export function guideSteps(p: FirstRunProgress): GuideStep[] {
+function guideSteps(p: FirstRunProgress): GuideStep[] {
   return [
     {
       key: 'import',

@@ -1,0 +1,38 @@
+# Foundry verb interface — Angular frontend. See https://github.com/CMaintz/foundry (CONTRACT.md).
+# The verbs delegate to the npm scripts, which own the Angular-specific tool invocations.
+
+[tools]
+node = "24.21.0"
+
+[env]
+_.path = ["./node_modules/.bin", "{{config_root}}/../scripts"]
+FOUNDRY_TELEMETRY = "{{config_root}}/../.foundry/telemetry.jsonl"
+
+[tasks.fix]
+description = "Prettier + eslint --fix"
+run = "npm run format"
+
+[tasks.lint]
+description = "angular-eslint (max 0 warnings) + Prettier check"
+run = "npm run lint"
+
+[tasks.typecheck]
+description = "tsc over the app and spec configs"
+run = "npm run typecheck"
+
+[tasks.test]
+description = "Vitest with the coverage thresholds from angular.json + build-script tests"
+run = "npm test"
+
+[tasks.audit]
+description = "Dependency vulnerabilities (critical)"
+run = "npm audit --audit-level=critical"
+
+[tasks.gate]
+description = "The oracle: lint -> typecheck -> test -> audit, sequentially."
+run = [
+    "foundry-verb-wrap lint      -- mise run lint",
+    "foundry-verb-wrap typecheck -- mise run typecheck",
+    "foundry-verb-wrap test      -- mise run test",
+    "foundry-verb-wrap audit     -- mise run audit",
+]

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AppConfig, joinApiUrl, loadAppConfig, normaliseBaseUrl } from './app-config';
+import { AppConfig, loadAppConfig } from './app-config';
 
 function response(body: unknown, ok = true): Response {
   return { ok, json: () => Promise.resolve(body) } as Response;
@@ -32,16 +32,13 @@ describe('loadAppConfig', () => {
   });
 });
 
-describe('url helpers', () => {
-  it('normalises trailing slashes and whitespace', () => {
-    expect(normaliseBaseUrl(' https://api.example/// ')).toBe('https://api.example');
-    expect(normaliseBaseUrl(undefined)).toBe('');
-    expect(joinApiUrl('https://api.example/', '/api/me')).toBe('https://api.example/api/me');
-    expect(joinApiUrl('', '/api/me')).toBe('/api/me');
-  });
-});
-
 describe('AppConfig', () => {
+  it('normalises trailing slashes and whitespace in the base URL', () => {
+    const config = TestBed.inject(AppConfig);
+    config.set({ apiBaseUrl: ' https://api.example/// ' });
+    expect(config.apiUrl('/api/me')).toBe('https://api.example/api/me');
+  });
+
   it('stores the normalised base and builds API URLs', () => {
     const config = TestBed.inject(AppConfig);
     expect(config.apiUrl('/api/me')).toBe('/api/me');

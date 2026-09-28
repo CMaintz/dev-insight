@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { scoreBand } from '../format/format';
 
-/** Compact score pill for tables and cards: coloured dot + number (+ optional band label). */
 @Component({
   selector: 'app-score-badge',
   changeDetection: ChangeDetectionStrategy.OnPush,

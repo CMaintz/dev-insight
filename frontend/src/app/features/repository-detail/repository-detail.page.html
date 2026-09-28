@@ -48,12 +48,9 @@
   @if (analysisData(); as a) {
     <section class="card scores" aria-labelledby="score-title">
       <h2 id="score-title" class="visually-hidden">Scores</h2>
-      <app-score-ring [score]="a.overallScore" label="Overall" size="lg" />
-      <div class="scores__dims">
-        <app-score-ring [score]="a.scores.activity" label="Activity · 30%" />
-        <app-score-ring [score]="a.scores.structure" label="Structure · 30%" />
-        <app-score-ring [score]="a.scores.quality" label="Quality · 40%" />
-      </div>
+      @if (scoreSummary(); as summary) {
+        <app-score-breakdown [scores]="summary" dimensionSize="md" />
+      }
       <p class="muted small scores__meta">
         Analysed {{ formatDate(a.createdAt) }}
         @if (a.headCommitSha) {

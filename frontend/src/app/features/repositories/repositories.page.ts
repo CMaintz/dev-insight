@@ -3,8 +3,10 @@ import { firstValueFrom } from 'rxjs';
 import { RunTracker } from '../../core/analysis/run-tracker';
 import { WorkspaceActions } from '../../core/analysis/workspace-actions';
 import { ReposApi } from '../../core/api/repos.api';
+import { errorAlreadyShownByInterceptor } from '../../core/http/surfaced-errors';
 import { Repository } from '../../core/models/api.models';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { WorkspaceActionsBar } from '../../shared/ui/workspace-actions-bar';
 import { reloadOn } from '../../shared/util/reload-on';
 import {
   EMPTY_FILTER,
@@ -18,7 +20,7 @@ import { RepoRow } from './repo-row';
 @Component({
   selector: 'app-repositories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EmptyState, RepoRow],
+  imports: [WorkspaceActionsBar, EmptyState, RepoRow],
   templateUrl: './repositories.page.html',
   styleUrl: './repositories.page.scss',
 })
@@ -67,11 +69,7 @@ export class RepositoriesPage {
   }
 
   protected async analyse(repo: Repository): Promise<void> {
-    try {
-      await this.tracker.analyse(repo.id);
-    } catch {
-      // The interceptor surfaced the error.
-    }
+    await this.tracker.analyse(repo.id).catch(errorAlreadyShownByInterceptor);
   }
 
   private replace(updated: Repository): void {

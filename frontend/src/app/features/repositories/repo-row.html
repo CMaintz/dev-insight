@@ -28,18 +28,11 @@
     @if (repo().description) {
       <p class="row__desc">{{ repo().description }}</p>
     }
-    <ul class="row__meta list-reset" aria-label="Repository facts">
+    <app-repo-facts class="row__meta" [repo]="repo()">
       @if (repo().language) {
         <li>{{ repo().language }}</li>
       }
-      <li>
-        <span aria-hidden="true">★</span> {{ stars() }}<span class="visually-hidden"> stars</span>
-      </li>
-      <li>
-        <span aria-hidden="true">⑂</span> {{ forks() }}<span class="visually-hidden"> forks</span>
-      </li>
-      <li>Active {{ lastActivity() }}</li>
-    </ul>
+    </app-repo-facts>
   </div>
 
   <div class="row__run">

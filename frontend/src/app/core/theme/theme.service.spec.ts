@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { THEME_STORAGE_KEY, ThemeService } from './theme.service';
+import { ThemeService } from './theme.service';
+
+const THEME_STORAGE_KEY = 'devinsight.theme';
 
 describe('ThemeService', () => {
   beforeEach(() => {

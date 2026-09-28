@@ -33,12 +33,7 @@
 
   @if (scores(); as s) {
     <section class="hero__scores" aria-label="Scores based on this developer's own contributions">
-      <app-score-ring [score]="s.overall" label="Overall" size="lg" />
-      <div class="hero__dims">
-        <app-score-ring [score]="s.activity" label="Activity" size="sm" />
-        <app-score-ring [score]="s.structure" label="Structure" size="sm" />
-        <app-score-ring [score]="s.quality" label="Quality" size="sm" />
-      </div>
+      <app-score-breakdown [scores]="s" [showWeights]="false" />
     </section>
   }
 </header>

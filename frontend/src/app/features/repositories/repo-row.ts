@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { RouterLink } from '@angular/router';
 import { RepoRunState } from '../../core/analysis/run-tracker';
 import { Repository } from '../../core/models/api.models';
-import { formatCompact, formatRelative } from '../../shared/format/format';
+import { RepoFacts } from '../../shared/ui/repo-facts';
 
 @Component({
   selector: 'app-repo-row',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, RepoFacts],
   templateUrl: './repo-row.html',
   styleUrl: './repo-row.scss',
 })
@@ -20,9 +20,6 @@ export class RepoRow {
   readonly analyse = output<void>();
 
   protected readonly checkboxId = computed(() => `select-${this.repo().id}`);
-  protected readonly stars = computed(() => formatCompact(this.repo().stars));
-  protected readonly forks = computed(() => formatCompact(this.repo().forks));
-  protected readonly lastActivity = computed(() => formatRelative(this.repo().lastActivity));
 
   protected onToggle(event: Event): void {
     this.selectedChange.emit((event.target as HTMLInputElement).checked);

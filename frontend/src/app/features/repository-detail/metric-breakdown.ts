@@ -23,7 +23,6 @@ function toRow(metric: Metric): MetricRow {
   };
 }
 
-/** Explainability: every metric with its value, the points it earned and its weight. */
 @Component({
   selector: 'app-metric-breakdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +31,6 @@ function toRow(metric: Metric): MetricRow {
 })
 export class MetricBreakdown {
   readonly metrics = input.required<Metric[]>();
-  /** Dimension scores keyed by category (commit quality feeds the quality dimension). */
   readonly dimensionScores = input<Partial<Record<string, number>>>({});
 
   protected readonly groups = computed(() =>

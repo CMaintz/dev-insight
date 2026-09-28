@@ -4,8 +4,7 @@ import { FeedbackItem } from '../../shared/ui/feedback-item';
 
 const SEVERITY_RANK: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
 
-/** Improvements (most severe first) and strengths, side by side. */
-export function splitFeedback(items: readonly Feedback[]): {
+function splitFeedback(items: readonly Feedback[]): {
   improvements: Feedback[];
   strengths: Feedback[];
 } {

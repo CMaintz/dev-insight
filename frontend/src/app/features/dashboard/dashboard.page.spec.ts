@@ -1,7 +1,6 @@
 import { aDashboard, aRun } from '../../../testing/fixtures';
 import { button, createPage, text } from '../../../testing/page-harness';
 import { DashboardPage } from './dashboard.page';
-import { guideSteps } from './first-run-guide';
 
 describe('DashboardPage', () => {
   it('shows scores, KPIs, the repository table and top feedback', async () => {
@@ -18,7 +17,7 @@ describe('DashboardPage', () => {
     expect(content).toContain('20%');
     expect(element.querySelector('app-repo-score-table')?.textContent).toContain('alpha');
     expect(content).toContain('Large files');
-    expect(content).toContain('Get started');
+    expect(content).toContain('Get started — 4 of 5 done');
     http.verify();
   });
 
@@ -81,17 +80,5 @@ describe('DashboardPage', () => {
     http.expectOne((r) => r.url === '/api/dashboard').flush(null, { status: 500, statusText: 'x' });
     await settle();
     expect(text(element)).toContain('Could not load the dashboard');
-  });
-});
-
-describe('guideSteps', () => {
-  it('marks steps done from the counts', () => {
-    const steps = guideSteps({
-      repositoryCount: 3,
-      selectedCount: 2,
-      analyzedCount: 0,
-      isPortfolioPublic: false,
-    });
-    expect(steps.map((s) => s.done)).toEqual([true, true, false, false, false]);
   });
 });

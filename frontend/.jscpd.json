@@ -1,0 +1,16 @@
+{
+  "path": ["src", "scripts"],
+  "ignore": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.test.mjs",
+    "**/src/testing/**",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.angular/**"
+  ],
+  "threshold": 0,
+  "minLines": 5,
+  "minTokens": 50
+}

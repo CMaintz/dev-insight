@@ -1,13 +1,7 @@
-/**
- * Types mirroring docs/API.md (the HTTP contract). Keep in sync with the backend.
- */
-
-/** Scope as returned in response bodies. */
-export type Scope = 'repo' | 'userContribution';
-/** Scope as sent in the `?scope=` query parameter. */
+type Scope = 'repo' | 'userContribution';
 export type ScopeParam = 'repo' | 'user';
 export type Severity = 'low' | 'medium' | 'high';
-export type FeedbackType = 'ruleBased' | 'ai';
+type FeedbackType = 'ruleBased' | 'ai';
 export type MetricCategory = 'activity' | 'commitQuality' | 'structure' | 'quality';
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
@@ -87,7 +81,7 @@ export interface ActivityWeek {
   deletions: number;
 }
 
-export interface FileSize {
+interface FileSize {
   path: string;
   lines: number;
 }
@@ -140,7 +134,7 @@ export interface LanguageShare {
   share: number;
 }
 
-export interface CommitSizes {
+interface CommitSizes {
   xs: number;
   s: number;
   m: number;
@@ -160,7 +154,7 @@ export interface RepositorySummary {
   analyzedAt: string | null;
 }
 
-export interface FeedbackHighlight {
+interface FeedbackHighlight {
   repositoryId: string;
   repositoryName: string;
   feedback: Feedback;
@@ -222,7 +216,7 @@ export interface PortfolioProject {
   linkedRepositoryIds: string[];
 }
 
-export interface PortfolioStrength {
+interface PortfolioStrength {
   repositoryId: string;
   repositoryName: string;
   title: string;
@@ -241,14 +235,12 @@ export interface Portfolio {
   strengths: PortfolioStrength[];
 }
 
-/** RFC 9457 problem details body. */
 export interface ProblemDetails {
   status?: number;
   title?: string;
   detail?: string;
 }
 
-/** `POST /api/auth/exchange` and `POST /api/auth/token` response. */
 export interface TokenResponse {
   accessToken: string;
   expiresAt: string;

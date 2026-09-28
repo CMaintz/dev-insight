@@ -8,22 +8,7 @@
       </p>
     </div>
     <div class="page-actions">
-      <button
-        type="button"
-        class="btn"
-        (click)="actions.importFromGitHub()"
-        [disabled]="actions.importing()"
-      >
-        {{ actions.importing() ? 'Importing…' : 'Import from GitHub' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn--primary"
-        (click)="actions.analyseAllSelected()"
-        [disabled]="actions.startingAnalysis() || selectedCount() === 0"
-      >
-        Analyse all selected ({{ selectedCount() }})
-      </button>
+      <app-workspace-actions-bar [selectedCount]="selectedCount()" />
     </div>
   </header>
 

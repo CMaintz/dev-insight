@@ -31,7 +31,6 @@ function fallbackTitle(status: number): string {
   );
 }
 
-/** Turns an HTTP error (ideally RFC 9457 problem details) into a human-readable message. */
 export function describeHttpError(error: HttpErrorResponse): ErrorMessage {
   const problem = asProblem(error.error);
   const fallback = fallbackTitle(error.status);

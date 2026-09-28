@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { PortfolioOwner, Scores } from '../../core/models/api.models';
-import { ScoreRing } from '../../shared/ui/score-ring';
+import { ScoreBreakdown } from '../../shared/ui/score-breakdown';
 
 @Component({
   selector: 'app-portfolio-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ScoreRing],
+  imports: [ScoreBreakdown],
   templateUrl: './portfolio-hero.html',
   styleUrl: './portfolio-hero.scss',
 })

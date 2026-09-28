@@ -82,17 +82,7 @@
 }
 
 .hero__scores {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
   flex: 1 1 18rem;
-}
-
-.hero__dims {
-  display: flex;
-  gap: 1rem;
 }
 
 @media (min-width: 48rem) {

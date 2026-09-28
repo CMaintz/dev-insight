@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { AuthTokenStore } from '../auth/auth-token.store';
 import { AppConfig } from '../config/app-config';
-import { apiBaseUrlInterceptor, bearerTokenInterceptor, isApiPath } from './api.interceptors';
+import { apiBaseUrlInterceptor, bearerTokenInterceptor } from './api.interceptors';
 
 describe('API interceptors', () => {
   let http: HttpClient;
@@ -42,6 +42,16 @@ describe('API interceptors', () => {
     controller.expectOne('https://elsewhere.example/x').flush({});
   });
 
+  it('only rewrites exact API and health paths', () => {
+    TestBed.inject(AppConfig).set({ apiBaseUrl: 'https://api.example' });
+    http.get('/health?full=1').subscribe();
+    http.get('/healthy').subscribe();
+    http.get('/apix').subscribe();
+    controller.expectOne('https://api.example/health?full=1').flush('ok');
+    controller.expectOne('/healthy').flush('');
+    controller.expectOne('/apix').flush('');
+  });
+
   it('attaches the bearer token to API requests only', () => {
     TestBed.inject(AuthTokenStore).set('tok-1');
     TestBed.inject(AppConfig).set({ apiBaseUrl: 'https://api.example' });
@@ -62,16 +72,5 @@ describe('API interceptors', () => {
     const req = controller.expectOne('/api/me');
     expect(req.request.headers.get('Authorization')).toBe('Bearer other');
     req.flush({});
-  });
-});
-
-describe('isApiPath', () => {
-  it('matches API and health paths only', () => {
-    expect(isApiPath('/api/x')).toBe(true);
-    expect(isApiPath('/health')).toBe(true);
-    expect(isApiPath('/health?full=1')).toBe(true);
-    expect(isApiPath('/healthy')).toBe(false);
-    expect(isApiPath('/apix')).toBe(false);
-    expect(isApiPath('https://api.example/api/x')).toBe(false);
   });
 });

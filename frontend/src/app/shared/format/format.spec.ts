@@ -4,7 +4,6 @@ import {
   formatDecimal,
   formatRelative,
   formatShare,
-  formatShortDate,
   scoreBand,
 } from './format';
 import { formatMetricValue, groupMetrics, metricLabel } from './metrics';
@@ -22,8 +21,6 @@ describe('format helpers', () => {
     expect(formatDate('2026-09-27T23:30:00+00:00')).toBe('Sep 27, 2026');
     expect(formatDate(null)).toBe('—');
     expect(formatDate('garbage')).toBe('—');
-    expect(formatShortDate('2026-01-05')).toBe('Jan 5');
-    expect(formatShortDate('nope')).toBe('nope');
   });
 
   it('formats relative time', () => {

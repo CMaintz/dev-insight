@@ -13,11 +13,6 @@ const MESSAGES = {
   exchange: 'We could not finish signing you in — the link may have expired. Please try again.',
 } as const;
 
-/**
- * Landing point of the OAuth round-trip: `auth/callback?code=…&returnUrl=…` (or `?error=…`).
- * Trades the one-time code for a bearer token, loads the profile, then continues to the
- * (local-only) return URL.
- */
 @Component({
   selector: 'app-auth-callback-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,7 +60,6 @@ export class AuthCallbackPage implements OnInit {
   private readonly session = inject(SessionStore);
   private readonly router = inject(Router);
 
-  /** Query parameters (bound via withComponentInputBinding). */
   readonly code = input<string | undefined>(undefined);
   readonly returnUrl = input<string | undefined>(undefined);
   readonly error = input<string | undefined>(undefined);

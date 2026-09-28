@@ -42,7 +42,6 @@ export function createProjectForm(project: Project | null, nextSortOrder = 0): P
   });
 }
 
-/** Normalises the raw form value into the API request body. */
 export function toProjectInput(value: ProjectFormGroup['value']): ProjectInput {
   const description = value.description?.trim() ?? '';
   return {
@@ -54,7 +53,6 @@ export function toProjectInput(value: ProjectFormGroup['value']): ProjectInput {
   };
 }
 
-/** Next free sort position: one past the current maximum. */
 export function nextSortOrder(projects: readonly Project[]): number {
   return projects.reduce((max, p) => Math.max(max, p.sortOrder + 1), 0);
 }

@@ -22,22 +22,11 @@
 }
 
 .scores {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-around;
-  gap: 1.5rem;
-}
-
-.scores__dims {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1.5rem;
+  display: grid;
+  gap: 1rem;
 }
 
 .scores__meta {
-  flex-basis: 100%;
   margin: 0;
   text-align: center;
 }

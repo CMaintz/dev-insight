@@ -14,10 +14,11 @@ import {
 } from '../../shared/charts/charts';
 import { formatShare } from '../../shared/format/format';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { WorkspaceActionsBar } from '../../shared/ui/workspace-actions-bar';
 import { FeedbackItem } from '../../shared/ui/feedback-item';
 import { KpiTile } from '../../shared/ui/kpi-tile';
 import { ScopeToggle } from '../../shared/ui/scope-toggle';
-import { ScoreRing } from '../../shared/ui/score-ring';
+import { ScoreBreakdown } from '../../shared/ui/score-breakdown';
 import { reloadOn, stickyValue } from '../../shared/util/reload-on';
 import { FirstRunGuide, FirstRunProgress } from './first-run-guide';
 import { RepoScoreTable } from './repo-score-table';
@@ -26,6 +27,7 @@ import { RepoScoreTable } from './repo-score-table';
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    WorkspaceActionsBar,
     RouterLink,
     ActivityChart,
     CommitSizeChart,
@@ -35,7 +37,7 @@ import { RepoScoreTable } from './repo-score-table';
     FeedbackItem,
     KpiTile,
     ScopeToggle,
-    ScoreRing,
+    ScoreBreakdown,
     FirstRunGuide,
     RepoScoreTable,
   ],

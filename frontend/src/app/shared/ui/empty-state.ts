@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Friendly placeholder with a heading, guidance text and projected actions. */
 @Component({
   selector: 'app-empty-state',
   changeDetection: ChangeDetectionStrategy.OnPush,

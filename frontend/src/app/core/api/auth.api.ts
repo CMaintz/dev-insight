@@ -8,7 +8,6 @@ import { TokenResponse } from '../models/api.models';
 export class AuthApi {
   private readonly http = inject(HttpClient);
 
-  /** Trades the one-time OAuth callback code for a bearer token. Errors are rendered by the page. */
   exchange(code: string): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(
       '/api/auth/exchange',

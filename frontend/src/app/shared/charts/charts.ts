@@ -25,7 +25,6 @@ import {
 import { ChartFrame } from './chart-frame';
 import { TimeSeriesChart } from './time-series-chart';
 
-/** Commits per week over time. */
 @Component({
   selector: 'app-activity-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,7 +50,6 @@ export class ActivityChart {
   protected readonly table = computed(() => activityTable(this.weeks()));
 }
 
-/** Overall + dimension scores over time (0–100 axis). */
 @Component({
   selector: 'app-score-evolution-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,7 +77,6 @@ export class ScoreEvolutionChart {
   protected readonly table = computed(() => scoreTable(this.samples()));
 }
 
-/** Language distribution as horizontal percentage bars (top 6 + Other). */
 @Component({
   selector: 'app-languages-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,7 +104,6 @@ export class LanguagesChart {
   protected readonly table = computed(() => languageTable(this.languages()));
 }
 
-/** Distribution of commit sizes (lines changed per commit). */
 @Component({
   selector: 'app-commit-size-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -8,14 +8,13 @@ export const CATEGORY_LABELS: Record<MetricCategory, string> = {
   quality: 'Quality',
 };
 
-export const CATEGORY_ORDER: readonly MetricCategory[] = [
+const CATEGORY_ORDER: readonly MetricCategory[] = [
   'activity',
   'commitQuality',
   'structure',
   'quality',
 ];
 
-/** Human labels for the backend's stable metric keys (MetricKeys.cs). */
 const METRIC_LABELS: Record<string, string> = {
   total_commits: 'Total commits',
   days_since_last_commit: 'Days since last commit',
@@ -69,7 +68,6 @@ function isRatioMetric(name: string): boolean {
   return name.endsWith('_ratio') || name.includes('_ratio_') || name === 'monolith_indicator';
 }
 
-/** Formats a metric value according to what its key says it measures. */
 export function formatMetricValue(metric: Pick<Metric, 'name' | 'value'>): string {
   if (isBooleanMetric(metric.name)) {
     return metric.value >= 1 ? 'Yes' : 'No';
@@ -86,7 +84,6 @@ export interface MetricGroup {
   metrics: Metric[];
 }
 
-/** Groups metrics by category (fixed order); scored metrics first, heaviest weight first. */
 export function groupMetrics(metrics: readonly Metric[]): MetricGroup[] {
   return CATEGORY_ORDER.map((category) => ({
     category,

@@ -6,7 +6,7 @@ import { aProfile } from '../../../testing/fixtures';
 import { AppConfig } from '../config/app-config';
 import { AuthTokenStore } from './auth-token.store';
 import { BROWSER_LOCATION } from './browser-location';
-import { SessionStore, gitHubLoginUrl, safeReturnUrl } from './session.store';
+import { SessionStore, safeReturnUrl } from './session.store';
 
 describe('SessionStore', () => {
   let store: SessionStore;
@@ -70,6 +70,13 @@ describe('SessionStore', () => {
     expect((await pending)?.login).toBe('new');
   });
 
+  it('never hands a non-local return URL to the OAuth start', () => {
+    store.signIn('https://evil.example');
+    store.signIn('//evil.example');
+    expect(assign).toHaveBeenNthCalledWith(1, '/api/auth/github/login?returnUrl=%2Fdashboard');
+    expect(assign).toHaveBeenNthCalledWith(2, '/api/auth/github/login?returnUrl=%2Fdashboard');
+  });
+
   it('signs in against the configured API origin', () => {
     TestBed.inject(AppConfig).set({ apiBaseUrl: 'https://api.example/' });
     store.signIn('/settings');
@@ -112,14 +119,5 @@ describe('safeReturnUrl', () => {
     expect(safeReturnUrl('//evil.example')).toBe('/dashboard');
     expect(safeReturnUrl(String.raw`/\evil.example`)).toBe('/dashboard');
     expect(safeReturnUrl('https://evil.example')).toBe('/dashboard');
-  });
-});
-
-describe('gitHubLoginUrl', () => {
-  it('rejects non-local return URLs', () => {
-    expect(gitHubLoginUrl('https://evil.example')).toBe(
-      '/api/auth/github/login?returnUrl=%2Fdashboard',
-    );
-    expect(gitHubLoginUrl('//evil.example')).toBe('/api/auth/github/login?returnUrl=%2Fdashboard');
   });
 });

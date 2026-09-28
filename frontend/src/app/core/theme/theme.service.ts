@@ -1,33 +1,21 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { readStoredValue, storeValueIfPossible } from '../../shared/util/browser-storage';
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
 export type EffectiveTheme = 'light' | 'dark';
 
-export const THEME_STORAGE_KEY = 'devinsight.theme';
+const THEME_STORAGE_KEY = 'devinsight.theme';
 
 function readStoredChoice(): ThemeChoice {
-  try {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'system';
-  } catch {
-    return 'system';
-  }
+  const stored = readStoredValue(THEME_STORAGE_KEY);
+  return stored === 'light' || stored === 'dark' ? stored : 'system';
 }
 
 function persistChoice(choice: ThemeChoice): void {
-  try {
-    if (choice === 'system') {
-      localStorage.removeItem(THEME_STORAGE_KEY);
-    } else {
-      localStorage.setItem(THEME_STORAGE_KEY, choice);
-    }
-  } catch {
-    // Storage can be unavailable (private mode, blocked site data); the choice stays in memory.
-  }
+  storeValueIfPossible(THEME_STORAGE_KEY, choice === 'system' ? null : choice);
 }
 
-/** Light/dark theme: follows the OS unless the user picks one; stamps `data-theme` on <html>. */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
@@ -57,7 +45,6 @@ export class ThemeService {
     });
   }
 
-  /** Flips to the opposite of what is currently shown. */
   toggle(): void {
     this.choice.set(this.effective() === 'dark' ? 'light' : 'dark');
   }

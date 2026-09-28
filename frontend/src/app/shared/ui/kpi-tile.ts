@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Stat tile: label, value, optional hint. The value is the chart. */
 @Component({
   selector: 'app-kpi-tile',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -16,7 +16,7 @@ import {
   toScoreSamples,
   vagueShare,
 } from './chart-data';
-import { CATEGORICAL, seriesColors } from './chart-palette';
+import { seriesColors } from './chart-palette';
 
 const weeks: ActivityWeek[] = [
   { weekStart: '2026-09-07', commits: 2, additions: 10, deletions: 1 },
@@ -140,8 +140,8 @@ describe('commit size mapping', () => {
 
 describe('seriesColors', () => {
   it('takes slots in fixed order and clamps the count', () => {
-    expect(seriesColors('light', 2)).toEqual(CATEGORICAL.light.slice(0, 2));
-    expect(seriesColors('dark', 0)).toEqual([CATEGORICAL.dark[0]]);
+    expect(seriesColors('light', 2)).toEqual(['#2a78d6', '#eb6834']);
+    expect(seriesColors('dark', 0)).toEqual(['#3987e5']);
     expect(seriesColors('light', 20)).toHaveLength(8);
   });
 });

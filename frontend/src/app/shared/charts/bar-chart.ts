@@ -4,7 +4,6 @@ import { ThemeService } from '../../core/theme/theme.service';
 import { ChartPoint } from './chart-data';
 import { prefersReducedMotion, seriesColors } from './chart-palette';
 
-/** Single-series bar chart (one colour, slot 1) with values labelled at the bar tips. */
 @Component({
   selector: 'app-bar-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,

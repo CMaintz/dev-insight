@@ -3,10 +3,6 @@ import { TableData } from './chart-data';
 
 let nextId = 0;
 
-/**
- * Accessible chart container: a titled <figure> with a plain-language summary, the chart
- * itself (projected, hidden from assistive tech) and a data-table twin.
- */
 @Component({
   selector: 'app-chart-frame',
   changeDetection: ChangeDetectionStrategy.OnPush,

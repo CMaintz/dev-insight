@@ -8,14 +8,12 @@ function parseUrl(value: string): URL | null {
   }
 }
 
-/** True for an absolute https:// URL with a host. */
-export function isHttpsUrl(value: string): boolean {
+function isHttpsUrl(value: string): boolean {
   const url = parseUrl(value.trim());
   return url !== null && url.protocol === 'https:' && url.hostname.length > 0;
 }
 
-/** True for https://linkedin.com/... or any subdomain such as https://www.linkedin.com/in/x. */
-export function isLinkedInUrl(value: string): boolean {
+function isLinkedInUrl(value: string): boolean {
   const url = parseUrl(value.trim());
   if (!url || url.protocol !== 'https:') {
     return false;
@@ -34,7 +32,6 @@ function optionalUrlValidator(key: string, test: (value: string) => boolean): Va
   };
 }
 
-/** Empty is allowed (combine with Validators.required when needed). */
 export const httpsUrlValidator: ValidatorFn = optionalUrlValidator('httpsUrl', isHttpsUrl);
 
 export const linkedInUrlValidator: ValidatorFn = optionalUrlValidator('linkedInUrl', isLinkedInUrl);

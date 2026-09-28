@@ -1,6 +1,5 @@
 import { InjectionToken } from '@angular/core';
 
-/** Abstraction over full-page navigation so tests can observe OAuth redirects. */
 export interface BrowserLocation {
   assign(url: string): void;
 }

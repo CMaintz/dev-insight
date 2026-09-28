@@ -5,37 +5,7 @@ import { AnalysisApi } from '../api/analysis.api';
 import { AnalysisRun } from '../models/api.models';
 import { ToastService } from '../notifications/toast.service';
 import { RunPoller } from './run-poller';
-import { RunTracker, summariseRuns } from './run-tracker';
-
-describe('summariseRuns', () => {
-  it('is idle without runs', () => {
-    expect(summariseRuns([]).phase).toBe('idle');
-  });
-
-  it('reports progress across scopes', () => {
-    const state = summariseRuns([
-      aRun({ status: 'succeeded' }),
-      aRun({ id: 'run2', status: 'running' }),
-    ]);
-    expect(state).toEqual({ phase: 'active', label: 'Analysing (1/2)' });
-  });
-
-  it('shows Queued for a single queued run', () => {
-    expect(summariseRuns([aRun()]).label).toBe('Queued');
-  });
-
-  it('surfaces the first failure', () => {
-    const state = summariseRuns([
-      aRun({ status: 'succeeded' }),
-      aRun({ id: 'run2', status: 'failed', error: 'Clone failed' }),
-    ]);
-    expect(state).toEqual({ phase: 'failed', label: 'Failed', error: 'Clone failed' });
-  });
-
-  it('is succeeded when every run succeeded', () => {
-    expect(summariseRuns([aRun({ status: 'succeeded' })]).phase).toBe('succeeded');
-  });
-});
+import { RunTracker } from './run-tracker';
 
 describe('RunTracker', () => {
   let tracker: RunTracker;
@@ -88,6 +58,15 @@ describe('RunTracker', () => {
     expect(tracker.stateFor('r1').phase).toBe('succeeded');
     expect(tracker.settledCount()).toBe(2);
     expect(tracker.activeCount()).toBe(0);
+  });
+
+  it('is idle for repositories without runs', () => {
+    expect(tracker.stateFor('unknown')).toEqual({ phase: 'idle', label: '' });
+  });
+
+  it('shows Queued for a single queued run', async () => {
+    await tracker.analyse('r1', ['repo']);
+    expect(tracker.stateFor('r1')).toEqual({ phase: 'active', label: 'Queued' });
   });
 
   it('toasts failed runs', async () => {

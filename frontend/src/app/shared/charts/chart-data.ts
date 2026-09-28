@@ -7,7 +7,6 @@ import {
 } from '../../core/models/api.models';
 import { formatDate, formatInteger, formatShare } from '../format/format';
 
-/** Shapes consumed by ngx-charts (structurally identical to its DataItem / Series). */
 export interface ChartPoint {
   name: string | Date;
   value: number;
@@ -26,8 +25,6 @@ export interface TableData {
 function utcDate(value: string): Date {
   return new Date(value.length === 10 ? `${value}T00:00:00Z` : value);
 }
-
-// --- Activity -------------------------------------------------------------------------------
 
 export function activitySeries(weeks: readonly ActivityWeek[]): ChartSeries[] {
   return [
@@ -58,11 +55,8 @@ export function activityTable(weeks: readonly ActivityWeek[]): TableData {
   };
 }
 
-// --- Scores over time -----------------------------------------------------------------------
-
 type ScoreSample = Omit<ScorePoint, 'date'> & { date: string };
 
-/** Accepts dashboard/portfolio `ScorePoint`s or per-repo `ScoreSnapshot`s. */
 export function toScoreSamples(points: readonly (ScorePoint | ScoreSnapshot)[]): ScoreSample[] {
   return points.map((p) => ({
     date: 'date' in p ? p.date : p.createdAt,
@@ -73,8 +67,7 @@ export function toScoreSamples(points: readonly (ScorePoint | ScoreSnapshot)[]):
   }));
 }
 
-/** Fixed entity order: colour slots follow the series name, never its rank. */
-export const SCORE_SERIES = [
+const SCORE_SERIES_IN_COLOUR_SLOT_ORDER = [
   { key: 'overall', name: 'Overall' },
   { key: 'activity', name: 'Activity' },
   { key: 'structure', name: 'Structure' },
@@ -82,7 +75,7 @@ export const SCORE_SERIES = [
 ] as const;
 
 export function scoreSeries(samples: readonly ScoreSample[]): ChartSeries[] {
-  return SCORE_SERIES.map(({ key, name }) => ({
+  return SCORE_SERIES_IN_COLOUR_SLOT_ORDER.map(({ key, name }) => ({
     name,
     series: samples.map((s) => ({ name: utcDate(s.date), value: s[key] })),
   }));
@@ -113,9 +106,6 @@ export function scoreTable(samples: readonly ScoreSample[]): TableData {
   };
 }
 
-// --- Languages ------------------------------------------------------------------------------
-
-/** Bytes-per-language map → shares, largest first. */
 export function languageShares(bytes: Readonly<Record<string, number>>): LanguageShare[] {
   const total = Object.values(bytes).reduce((sum, b) => sum + b, 0);
   if (total <= 0) {
@@ -126,7 +116,6 @@ export function languageShares(bytes: Readonly<Record<string, number>>): Languag
     .sort((a, b) => b.bytes - a.bytes);
 }
 
-/** Top `max` languages as percentage bars; the tail folds into "Other". */
 export function languageBars(languages: readonly LanguageShare[], max = 6): ChartPoint[] {
   const sorted = [...languages].sort((a, b) => b.share - a.share);
   const head = sorted.slice(0, max).map((l) => ({ name: l.language, value: pct(l.share) }));
@@ -158,9 +147,7 @@ export function languageTable(languages: readonly LanguageShare[]): TableData {
   };
 }
 
-// --- Commit sizes ---------------------------------------------------------------------------
-
-export const SIZE_BUCKETS = [
+const SIZE_BUCKETS = [
   { key: 'xs', label: 'XS (<10)' },
   { key: 's', label: 'S (10–49)' },
   { key: 'm', label: 'M (50–249)' },

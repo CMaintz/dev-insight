@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { AuthTokenStore } from '../auth/auth-token.store';
 import { SessionStore } from '../auth/session.store';
 import { ToastService } from '../notifications/toast.service';
-import { SILENT_ERRORS, errorInterceptor, isPublicRequest } from './error.interceptor';
+import { SILENT_ERRORS, errorInterceptor } from './error.interceptor';
 
 describe('errorInterceptor', () => {
   let http: HttpClient;
@@ -60,6 +60,13 @@ describe('errorInterceptor', () => {
     expect(clearToken).not.toHaveBeenCalled();
   });
 
+  it('treats only the exact session probe as public, ignoring origin and query', () => {
+    fail('http://localhost:4200/api/portfolio/x?y=1', 401);
+    expect(navigate).not.toHaveBeenCalled();
+    fail('/api/me/profile', 401);
+    expect(navigate).toHaveBeenCalledWith('/');
+  });
+
   it('leaves 404 to the page', () => {
     fail('/api/analysis/r1', 404);
     expect(toastError).not.toHaveBeenCalled();
@@ -73,14 +80,5 @@ describe('errorInterceptor', () => {
   it('stays silent when the request opts out', () => {
     fail('/api/projects', 500, null, new HttpContext().set(SILENT_ERRORS, true));
     expect(toastError).not.toHaveBeenCalled();
-  });
-});
-
-describe('isPublicRequest', () => {
-  it('matches exact and prefix paths, ignoring origin and query', () => {
-    expect(isPublicRequest('/api/me')).toBe(true);
-    expect(isPublicRequest('http://localhost:4200/api/portfolio/x?y=1')).toBe(true);
-    expect(isPublicRequest('/api/me/profile')).toBe(false);
-    expect(isPublicRequest('/api/dashboard')).toBe(false);
   });
 });

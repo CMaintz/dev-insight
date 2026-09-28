@@ -50,7 +50,6 @@ export function portfolioHighlights(p: Portfolio): PortfolioHighlights {
 export class PortfolioPage {
   private readonly title = inject(Title);
 
-  /** Route parameter `:handle` — a GitHub login or user id. */
   readonly handle = input.required<string>();
 
   protected readonly portfolio = inject(PortfolioApi).resource(this.handle);

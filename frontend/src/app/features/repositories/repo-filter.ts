@@ -8,7 +8,6 @@ export interface RepoFilter {
 
 export const EMPTY_FILTER: RepoFilter = { query: '', language: '', selectedOnly: false };
 
-/** Case-insensitive search over name/description, plus language and selection filters. */
 export function filterRepositories(repos: readonly Repository[], filter: RepoFilter): Repository[] {
   const query = filter.query.trim().toLowerCase();
   return repos.filter((repo) => {
@@ -28,7 +27,6 @@ export function filterRepositories(repos: readonly Repository[], filter: RepoFil
   });
 }
 
-/** Most recently active first; never-active repositories last, then by name. */
 export function sortByActivity(repos: readonly Repository[]): Repository[] {
   return [...repos].sort((a, b) => {
     const at = a.lastActivity ? Date.parse(a.lastActivity) : -Infinity;

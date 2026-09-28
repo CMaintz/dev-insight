@@ -1,32 +1,43 @@
 import { FormControl } from '@angular/forms';
-import { httpsUrlValidator, isHttpsUrl, isLinkedInUrl, linkedInUrlValidator } from './validators';
+import { httpsUrlValidator, linkedInUrlValidator } from './validators';
 
-describe('url validators', () => {
-  it('accepts only absolute https URLs', () => {
-    expect(isHttpsUrl('https://example.com/a.png')).toBe(true);
-    expect(isHttpsUrl('  https://example.com  ')).toBe(true);
-    expect(isHttpsUrl('http://example.com/a.png')).toBe(false);
-    expect(isHttpsUrl('example.com/a.png')).toBe(false);
-    expect(isHttpsUrl('javascript:alert(1)')).toBe(false);
+const httpsErrors = (value: string | null) => httpsUrlValidator(new FormControl(value));
+const linkedInErrors = (value: string | null) => linkedInUrlValidator(new FormControl(value));
+
+describe('httpsUrlValidator', () => {
+  it('accepts absolute https URLs', () => {
+    expect(httpsErrors('https://example.com/a.png')).toBeNull();
+    expect(httpsErrors('  https://example.com  ')).toBeNull();
   });
 
+  it('rejects other schemes and relative URLs', () => {
+    for (const value of ['http://example.com/a.png', 'example.com/a.png', 'javascript:alert(1)']) {
+      expect(httpsErrors(value)).toEqual({ httpsUrl: true });
+    }
+  });
+
+  it('treats empty values as valid (optional field)', () => {
+    expect(httpsErrors('')).toBeNull();
+    expect(httpsErrors(null)).toBeNull();
+  });
+});
+
+describe('linkedInUrlValidator', () => {
   it('accepts linkedin.com and its subdomains over https', () => {
-    expect(isLinkedInUrl('https://www.linkedin.com/in/octocat')).toBe(true);
-    expect(isLinkedInUrl('https://linkedin.com/in/octocat')).toBe(true);
-    expect(isLinkedInUrl('http://www.linkedin.com/in/octocat')).toBe(false);
-    expect(isLinkedInUrl('https://linkedin.com.evil.io/in/x')).toBe(false);
-    expect(isLinkedInUrl('https://notlinkedin.com/in/x')).toBe(false);
-    expect(isLinkedInUrl('nonsense')).toBe(false);
+    expect(linkedInErrors('https://www.linkedin.com/in/octocat')).toBeNull();
+    expect(linkedInErrors('https://linkedin.com/in/octocat')).toBeNull();
+    expect(linkedInErrors(null)).toBeNull();
   });
 
-  it('treats empty values as valid (optional fields)', () => {
-    expect(httpsUrlValidator(new FormControl(''))).toBeNull();
-    expect(linkedInUrlValidator(new FormControl<string | null>(null))).toBeNull();
-  });
-
-  it('reports errors under their own keys', () => {
-    expect(httpsUrlValidator(new FormControl('http://x.io'))).toEqual({ httpsUrl: true });
-    expect(linkedInUrlValidator(new FormControl('https://x.io'))).toEqual({ linkedInUrl: true });
-    expect(linkedInUrlValidator(new FormControl('https://www.linkedin.com/in/a'))).toBeNull();
+  it('rejects http, look-alike hosts and non-URLs', () => {
+    for (const value of [
+      'http://www.linkedin.com/in/octocat',
+      'https://linkedin.com.evil.io/in/x',
+      'https://notlinkedin.com/in/x',
+      'https://x.io',
+      'nonsense',
+    ]) {
+      expect(linkedInErrors(value)).toEqual({ linkedInUrl: true });
+    }
   });
 });

@@ -26,7 +26,6 @@ export class AnalysisApi {
     return this.http.get<AnalysisRun>(`/api/analysis/runs/${encodeURIComponent(runId)}`);
   }
 
-  /** Latest analysis for a repo + scope. A 404 error means "never analysed". */
   latestResource(key: () => RepoScopeKey) {
     return httpResource<Analysis>(() => {
       const { repoId, scope } = key();

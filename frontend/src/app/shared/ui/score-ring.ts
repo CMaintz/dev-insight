@@ -4,7 +4,6 @@ import { scoreBand } from '../format/format';
 const RADIUS = 42;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-/** Circular 0–100 meter. The band label ("Strong", …) accompanies the colour. */
 @Component({
   selector: 'app-score-ring',
   changeDetection: ChangeDetectionStrategy.OnPush,

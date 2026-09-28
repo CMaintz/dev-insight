@@ -4,7 +4,6 @@ import { ThemeService } from '../../core/theme/theme.service';
 import { ChartSeries } from './chart-data';
 import { prefersReducedMotion, seriesColors } from './chart-palette';
 
-/** Line chart over a time axis (2px lines, hover crosshair + tooltip from ngx-charts). */
 @Component({
   selector: 'app-time-series-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,7 +32,6 @@ export class TimeSeriesChart {
   private readonly theme = inject(ThemeService);
 
   readonly series = input.required<ChartSeries[]>();
-  /** Fixed upper bound (e.g. 100 for scores); undefined lets the data decide. */
   readonly yMax = input<number | undefined>(undefined);
 
   protected readonly legendPosition = LegendPosition.Below;

@@ -5,7 +5,7 @@ import { AnalysisRun, ScopeParam } from '../models/api.models';
 import { ToastService } from '../notifications/toast.service';
 import { RunPoller, isTerminal } from './run-poller';
 
-export type RunPhase = 'idle' | 'active' | 'succeeded' | 'failed';
+type RunPhase = 'idle' | 'active' | 'succeeded' | 'failed';
 
 export interface RepoRunState {
   phase: RunPhase;
@@ -15,8 +15,7 @@ export interface RepoRunState {
 
 const IDLE: RepoRunState = { phase: 'idle', label: '' };
 
-/** Collapses the runs of one repository (one per scope) into a single UI state. */
-export function summariseRuns(runs: readonly AnalysisRun[]): RepoRunState {
+function summariseRuns(runs: readonly AnalysisRun[]): RepoRunState {
   if (runs.length === 0) {
     return IDLE;
   }
@@ -39,11 +38,6 @@ export function summariseRuns(runs: readonly AnalysisRun[]): RepoRunState {
 
 const ALL_SCOPES: readonly ScopeParam[] = ['repo', 'user'];
 
-/**
- * App-wide registry of analysis runs started from the UI. Polls each run to completion
- * (keeps polling across navigation) and bumps `settledCount` whenever one finishes so
- * pages can refetch their data.
- */
 @Injectable({ providedIn: 'root' })
 export class RunTracker {
   private readonly api = inject(AnalysisApi);
@@ -67,7 +61,6 @@ export class RunTracker {
     return this.stateFor(repositoryId).phase === 'active';
   }
 
-  /** Analyses one repository in both scopes so the scope toggle has data either way. */
   async analyse(repositoryId: string, scopes: readonly ScopeParam[] = ALL_SCOPES): Promise<void> {
     this.forget(repositoryId);
     const started = await Promise.all(
@@ -76,7 +69,6 @@ export class RunTracker {
     started.forEach((run) => this.track(run));
   }
 
-  /** Analyses every selected repository; returns how many runs were queued. */
   async analyseAll(): Promise<number> {
     const started = await firstValueFrom(this.api.runAll());
     started.forEach((run) => this.track(run));

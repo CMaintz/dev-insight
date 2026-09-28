@@ -1,7 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { aFeedback, aRepo, aRun, anAnalysis } from '../../../testing/fixtures';
 import { button, createPage, text } from '../../../testing/page-harness';
-import { splitFeedback } from './feedback-list';
+import { TestBed } from '@angular/core/testing';
+import { FeedbackList } from './feedback-list';
 import { RepositoryDetailPage } from './repository-detail.page';
 
 function flushRepo(http: HttpTestingController) {
@@ -66,14 +67,19 @@ describe('RepositoryDetailPage', () => {
   });
 });
 
-describe('splitFeedback', () => {
-  it('orders improvements by severity and separates strengths', () => {
-    const result = splitFeedback([
-      aFeedback({ id: 'l', severity: 'low' }),
-      aFeedback({ id: 's', isStrength: true }),
-      aFeedback({ id: 'h', severity: 'high' }),
+describe('FeedbackList', () => {
+  it('lists improvements most severe first and strengths separately', async () => {
+    const fixture = TestBed.createComponent(FeedbackList);
+    fixture.componentRef.setInput('feedback', [
+      aFeedback({ id: 'l', severity: 'low', title: 'Low one' }),
+      aFeedback({ id: 's', isStrength: true, title: 'Strong one' }),
+      aFeedback({ id: 'h', severity: 'high', title: 'High one' }),
     ]);
-    expect(result.improvements.map((f) => f.id)).toEqual(['h', 'l']);
-    expect(result.strengths.map((f) => f.id)).toEqual(['s']);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const titles = (selector: string) =>
+      [...element.querySelectorAll(`${selector} h4`)].map((h) => h.textContent?.trim());
+    expect(titles('section[aria-labelledby="fb-improve"]')).toEqual(['High one', 'Low one']);
+    expect(titles('section[aria-labelledby="fb-strength"]')).toEqual(['Strong one']);
   });
 });

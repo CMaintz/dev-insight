@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { aRun } from '../../../testing/fixtures';
 import { AnalysisRun } from '../models/api.models';
-import { RUN_POLL_INTERVAL_MS, RUN_POLL_MAX_ATTEMPTS, RunPoller, isTerminal } from './run-poller';
+import { RunPoller, isTerminal } from './run-poller';
 
 describe('RunPoller', () => {
   let poller: RunPoller;
@@ -12,12 +12,7 @@ describe('RunPoller', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: RUN_POLL_INTERVAL_MS, useValue: 2000 },
-        { provide: RUN_POLL_MAX_ATTEMPTS, useValue: 3 },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     poller = TestBed.inject(RunPoller);
     controller = TestBed.inject(HttpTestingController);
@@ -59,10 +54,10 @@ describe('RunPoller', () => {
     expect(seen).toEqual(['failed']);
   });
 
-  it('gives up after the maximum number of attempts', async () => {
+  it('gives up after 300 polls (~10 minutes)', async () => {
     let completed = false;
     poller.poll('run1').subscribe({ complete: () => (completed = true) });
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 300; i++) {
       await vi.advanceTimersByTimeAsync(2000);
       controller.expectOne('/api/analysis/runs/run1').flush(aRun({ status: 'queued' }));
     }

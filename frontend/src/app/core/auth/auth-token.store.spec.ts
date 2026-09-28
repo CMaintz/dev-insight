@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { AuthTokenStore, TOKEN_STORAGE_KEY } from './auth-token.store';
+import { AuthTokenStore } from './auth-token.store';
+
+const TOKEN_STORAGE_KEY = 'devinsight.token';
 
 describe('AuthTokenStore', () => {
   beforeEach(() => localStorage.clear());

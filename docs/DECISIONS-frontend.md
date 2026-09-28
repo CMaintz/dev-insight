@@ -10,7 +10,7 @@ Each bullet: the choice → the alternative rejected, and why.
 - **`provideAnimationsAsync()`** in app config. ngx-charts still uses `@angular/animations`, and the async provider keeps the engine out of the initial bundle. Rejected `provideNoopAnimations` because it kills chart transitions for everyone. Motion is disabled per chart when `prefers-reduced-motion` is set.
 - **angular-eslint 22.5.0 flat config**, added by `ng add` and extended with: OnPush required, `prefer-inject`, `prefer-signals`, `max-lines: 300` (mirrors the Foundry structural-smell gate), `max-lines-per-function: 60` (off in specs), `eqeqeq`, `no-console` (except `console.error` in `main.ts`), template control-flow and self-closing rules, and a11y template rules. Rejected the bare recommended set because it enforces none of the task's conventions.
 - **`npm run lint` = `ng lint --max-warnings=0 && prettier --check .`**, which makes warnings fail the gate. Prettier has `endOfLine: lf`, and `.prettierignore` covers dist, coverage and the lockfile.
-- **Coverage thresholds: statements 90 / branches 80 / functions 85 / lines 90**, set in `angular.json` `test.options` so `npm test` is just `ng test --watch=false`. The measured result is 95.2 / 89.4 / 92.9 / 96.8. Rejected the suggested 70% because the suite comfortably meets a stricter bar. `src/testing/**` (fixtures/harness) and `main.ts` are excluded, but no app source is.
+- **Coverage thresholds: statements 90 / branches 80 / functions 85 / lines 90**, set in `angular.json` `test.options` so `npm test` is just `ng test --watch=false`. The measured result is 95.2 / 89.3 / 93.4 / 96.7. Rejected the suggested 70% because the suite comfortably meets a stricter bar. `src/testing/**` (fixtures/harness) and `main.ts` are excluded, but no app source is.
 - **Budgets left at CLI defaults** (initial 500 kB warn, component style 4 kB warn). Every route is lazy and ngx-charts/d3 only load with chart pages. The initial bundle is 335 kB raw / 94 kB transfer.
 
 ## CSP compliance (coordinator requirement)
@@ -59,7 +59,7 @@ Each bullet: the choice → the alternative rejected, and why.
 - **`SessionStore`** is the single cached `/api/me` probe with a shared in-flight promise. The guard, header, landing and settings all read it. Rejected per-component probes, which fire several requests on first load.
 - **Error interceptor**: a 401 clears the session and navigates to `/`, except for exactly `/api/me` and the prefix `/api/portfolio/`. A test caught that a naive prefix match would also have exempted `/api/me/profile`. 404 is left to pages ("not analysed yet" / "portfolio not found"). Everything else becomes a toast built from problem details. The `SILENT_ERRORS` `HttpContextToken` lets a caller opt out.
 - **`BROWSER_LOCATION` injection token** for the full-page OAuth redirect, so sign-in is unit-testable. The return URL is forced to a local path (`/…`, not `//…`), matching the backend rule.
-- **Run polling: `RunPoller`** uses `timer(2s, 2s)` + `exhaustMap` (a slow response never overlaps the next poll) + `takeWhile(inclusive)`, with a 300-poll cap (~10 min). The interval and cap are injection tokens so tests can drive them with fake timers.
+- **Run polling: `RunPoller`** uses `timer(2s, 2s)` + `exhaustMap` (a slow response never overlaps the next poll) + `takeWhile(inclusive)`, with a 300-poll cap (~10 min). The interval and cap are plain module constants. They used to be injection tokens overridden only by tests; the Foundry gate flagged that as test-only code, so the spec now drives the real 2 s / 300-poll values with fake timers.
 - **`RunTracker` is an app-wide root store of runs.** Polling continues if the user navigates away. Its `settledCount` signal bumps when a run finishes, and pages reload through `reloadOn()`. Rejected per-component polling because leaving the page would orphan the run and lose its state.
 - **Per-repo "Analyse" starts two runs (`scope=repo` and `scope=user`)**, and progress reads "Analysing (1/2)". Rejected analysing only the currently toggled scope: the toggle would otherwise land on "not analysed yet" right after an analysis, and `run-all` already does both scopes.
 - **`ScopePreference` is a root signal shared by the dashboard and repository detail**, so the scope survives navigation (not persisted across reloads).
@@ -89,6 +89,33 @@ Each bullet: the choice → the alternative rejected, and why.
 - **Every chart is a `<figure>`** with a heading, a plain-language summary (e.g. "Overall score rose by 12 to 62 …"), the plot marked `aria-hidden`, and a "Show data table" `<details>` twin. Empty states replace the plot with text.
 - **Score evolution needs ≥2 points to draw.** With one snapshot the summary text is shown instead, since a one-point line reads as broken.
 - **Chart chrome is themed through global CSS** (`_charts.scss`: hairline solid gridlines, muted axis text, themed tooltip). ngx-charts takes JS colour arrays, so wrappers pick light/dark arrays from `ThemeService.effective()`.
+
+## Foundry structural-smell gate (`habit-hooks --all`)
+
+- **`knip.json`**:
+  - Production entries are `src/main.ts!` and `scripts/*.mjs!`. Specs, `scripts/*.test.mjs` and `src/testing/**` are test-only (excluded from the production project).
+  - Rejected listing flagged files as entries: that would hide test-only code instead of removing it.
+- **`@angular-eslint/builder` is now an explicit pinned devDependency** because `angular.json` references it directly. Rejected leaving it to arrive transitively through `angular-eslint`.
+- **`.jscpd.json`** scans only `src` and `scripts`, excluding specs and the test harness. Without it, jscpd was reporting clones inside `package-lock.json`.
+- **Test-only exports removed, not whitelisted.** Specs now go through each module's real entry point instead of reaching into its internals:
+  - `summariseRuns` via `RunTracker.stateFor`
+  - `guideSteps` via the rendered first-run guide
+  - `splitFeedback` via the `FeedbackList` component
+  - URL/path helpers via `AppConfig` and the interceptors
+  - `isHttpsUrl` / `isLinkedInUrl` via the form validators
+  - `gitHubLoginUrl` via `SessionStore.signIn`
+  - storage keys as literals in the specs
+  - Dead code deleted: `toScopeParam`, `formatShortDate`.
+- **Named abstractions for duplicated blocks**:
+  - `WorkspaceActionsBar` (Import / Analyse-all buttons, shared by the dashboard and repositories pages).
+  - `ScoreBreakdown` (overall ring + three weighted dimension rings, used by the dashboard, repository detail and portfolio hero).
+  - `RepoFacts` (stars / forks / last-activity list, with projected language chips).
+  - `control-surface` SCSS mixin (shared by buttons and text inputs).
+  - `browser-storage.ts` (`readStoredValue` / `storeValueIfPossible`, shared by the theme and token stores).
+- **"The interceptor already showed this error" is now code, not a comment.** The empty `catch {}` blocks with explanatory comments are replaced by `resultOrNothing(request)` and `.catch(errorAlreadyShownByInterceptor)` from `core/http/surfaced-errors.ts`. Callers branch on `undefined` instead of swallowing the error.
+- **No comments in production `.ts`.** The sensor flags every comment regardless of intent. Explanations were moved into names (`CVD_VALIDATED_PALETTE`, `SCORE_SERIES_IN_COLOUR_SLOT_ORDER`, `dropTokenIfRejected`, `errorAlreadyShownByInterceptor`) or already live in this log (CSP, base-href fragment links, interceptor order, palette validation numbers).
+  - The comments in `app.config.ts` (config before the first request, interceptor order, async animations) were not flagged by the sensor and are kept, because they explain a _why_.
+  - SCSS/HTML files are outside the sensor's scope and keep their short why-comments.
 
 ## Testing
 

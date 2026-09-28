@@ -10,24 +10,7 @@
     </div>
     <div class="page-actions">
       <app-scope-toggle [(scope)]="scope" />
-      <button
-        type="button"
-        class="btn"
-        (click)="actions.importFromGitHub()"
-        [disabled]="actions.importing()"
-      >
-        {{ actions.importing() ? 'Importing…' : 'Import from GitHub' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn--primary"
-        (click)="actions.analyseAllSelected()"
-        [disabled]="
-          actions.startingAnalysis() || tracker.activeCount() > 0 || !data()?.selectedCount
-        "
-      >
-        {{ tracker.activeCount() > 0 ? 'Analysing…' : 'Analyse all selected' }}
-      </button>
+      <app-workspace-actions-bar [selectedCount]="data()?.selectedCount ?? 0" />
     </div>
   </header>
 
@@ -60,14 +43,7 @@
       <section class="card scores" aria-labelledby="scores-title">
         <h2 id="scores-title" class="visually-hidden">Average scores</h2>
         @if (d.averageScores; as s) {
-          <div class="scores__hero">
-            <app-score-ring [score]="s.overall" label="Overall" size="lg" />
-            <div class="scores__dims">
-              <app-score-ring [score]="s.activity" label="Activity · 30%" size="sm" />
-              <app-score-ring [score]="s.structure" label="Structure · 30%" size="sm" />
-              <app-score-ring [score]="s.quality" label="Quality · 40%" size="sm" />
-            </div>
-          </div>
+          <app-score-breakdown [scores]="s" />
           <p class="muted small">
             Averaged over {{ d.analyzedCount }} analysed of {{ d.selectedCount }} selected
             repositories.
