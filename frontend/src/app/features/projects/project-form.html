@@ -12,7 +12,7 @@
     />
     @if (showError(form.controls.name)) {
       <span id="project-name-error" class="field__error">
-        @if (form.controls.name.hasError('required')) {
+        @if (form.controls.name.hasError('required') || form.controls.name.hasError('blank')) {
           A name is required.
         } @else {
           Keep it under {{ nameMax }} characters.
@@ -28,11 +28,16 @@
       class="textarea"
       formControlName="description"
       [attr.aria-invalid]="showError(form.controls.description)"
-      aria-describedby="project-description-hint"
+      aria-describedby="project-description-hint project-description-error"
     ></textarea>
     <span id="project-description-hint" class="field__hint">
       {{ form.controls.description.value.length }} / {{ descriptionMax }} characters
     </span>
+    @if (showError(form.controls.description)) {
+      <span id="project-description-error" class="field__error">
+        Keep the description under {{ descriptionMax }} characters.
+      </span>
+    }
   </div>
 
   <fieldset class="field fieldset" formArrayName="imageUrls">

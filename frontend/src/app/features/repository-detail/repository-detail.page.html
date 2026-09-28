@@ -110,7 +110,7 @@
       <h2 id="feedback-title">Feedback</h2>
       <app-feedback-list [feedback]="a.feedback" />
     </section>
-  } @else if (notAnalysed()) {
+  } @else if (notAnalysed() && !repoMissing()) {
     <app-empty-state
       icon="🧪"
       heading="Not analysed yet"

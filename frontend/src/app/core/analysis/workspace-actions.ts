@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ReposApi } from '../api/repos.api';
-import { errorAlreadyShownByInterceptor, resultOrNothing } from '../http/surfaced-errors';
+import { UserActionErrors } from '../http/surfaced-errors';
 import { ToastService } from '../notifications/toast.service';
 import { RunTracker } from './run-tracker';
 
@@ -9,6 +9,7 @@ export class WorkspaceActions {
   private readonly repos = inject(ReposApi);
   private readonly tracker = inject(RunTracker);
   private readonly toasts = inject(ToastService);
+  private readonly errors = inject(UserActionErrors);
 
   readonly importing = signal(false);
   readonly startingAnalysis = signal(false);
@@ -19,7 +20,10 @@ export class WorkspaceActions {
       return;
     }
     this.importing.set(true);
-    const result = await resultOrNothing(this.repos.importFromGitHub());
+    const result = await this.errors.resultOrNothing(
+      this.repos.importFromGitHub(),
+      'The import endpoint was not found — is the API up to date?',
+    );
     this.importing.set(false);
     if (result) {
       this.toasts.success(
@@ -35,7 +39,11 @@ export class WorkspaceActions {
       return;
     }
     this.startingAnalysis.set(true);
-    const queued = await this.tracker.analyseAll().catch(errorAlreadyShownByInterceptor);
+    const queued = await this.tracker
+      .analyseAll()
+      .catch((error: unknown) =>
+        this.errors.handle(error, 'That repository no longer exists — re-import from GitHub.'),
+      );
     this.startingAnalysis.set(false);
     if (queued === undefined) {
       return;

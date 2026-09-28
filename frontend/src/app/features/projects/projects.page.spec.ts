@@ -73,6 +73,59 @@ describe('ProjectsPage', () => {
     expect(element.querySelector('app-project-form')).toBeNull();
   });
 
+  it('rebuilds the form when switching the edit target from one project to another', async () => {
+    const projectA = aProject({ id: 'a', name: 'Alpha site', sortOrder: 0 });
+    const projectB = aProject({ id: 'b', name: 'Beta app', description: 'B desc', sortOrder: 1 });
+    const { element, http, settle } = await loaded([projectA, projectB]);
+
+    const editButtons = () =>
+      [...element.querySelectorAll<HTMLButtonElement>('.project__actions button')].filter(
+        (b) => b.textContent?.trim() === 'Edit',
+      );
+    editButtons()[0].click();
+    await settle();
+    expect(element.querySelector<HTMLInputElement>('#project-name')?.value).toBe('Alpha site');
+
+    editButtons()[1].click();
+    await settle();
+    expect(element.querySelector<HTMLInputElement>('#project-name')?.value).toBe('Beta app');
+    expect(element.querySelector<HTMLTextAreaElement>('#project-description')?.value).toBe(
+      'B desc',
+    );
+
+    button(element, 'Save project').click();
+    await settle();
+    const put = http.expectOne({ method: 'PUT', url: '/api/projects/b' });
+    expect(put.request.body).toMatchObject({
+      name: 'Beta app',
+      description: 'B desc',
+      sortOrder: 1,
+    });
+    put.flush(projectB);
+    await settle();
+  });
+
+  it('disables deleting while a project is being edited', async () => {
+    const { element, settle } = await loaded();
+    button(element, 'Edit').click();
+    await settle();
+    expect(button(element, 'Delete').disabled).toBe(true);
+  });
+
+  it('rejects whitespace-only names and over-long descriptions inline', async () => {
+    const { element, http, settle } = await loaded([]);
+    button(element, 'New project').click();
+    await settle();
+    type(element, '#project-name', '   ');
+    type(element, '#project-description', 'x'.repeat(4001));
+    button(element, 'Save project').click();
+    await settle();
+
+    expect(text(element)).toContain('A name is required.');
+    expect(text(element)).toContain('Keep the description under 4000 characters.');
+    http.expectNone('/api/projects');
+  });
+
   it('edits an existing project', async () => {
     const { element, http, settle } = await loaded();
     button(element, 'Edit').click();

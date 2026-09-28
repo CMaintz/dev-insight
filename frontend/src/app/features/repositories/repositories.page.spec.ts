@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { ToastService } from '../../core/notifications/toast.service';
 import { aRepo, aRun } from '../../../testing/fixtures';
 import { button, createPage, text } from '../../../testing/page-harness';
 import { RepositoriesPage } from './repositories.page';
@@ -97,6 +99,39 @@ describe('RepositoriesPage', () => {
       .flush(aRun({ id: 'x2', scope: 'userContribution' }));
     await settle();
     expect(text(element)).toContain('Queued (0/2)');
+  });
+
+  it('announces a finished analysis while keeping "View results" a plain link', async () => {
+    const { element, http, settle } = await loaded();
+    element.querySelector<HTMLButtonElement>('button[aria-label="Analyse alpha"]')?.click();
+    await settle();
+    for (const scope of ['repo', 'user']) {
+      http
+        .expectOne((r) => r.url === '/api/analysis/run/r1' && r.params.get('scope') === scope)
+        .flush(aRun({ id: `done-${scope}`, status: 'succeeded' }));
+    }
+    await settle();
+    const link = [...element.querySelectorAll('a')].find((a) =>
+      a.textContent?.includes('View results'),
+    );
+    expect(link?.getAttribute('role')).toBeNull();
+    expect(link?.closest('[role="status"]')).not.toBeNull();
+  });
+
+  it('explains when the repository to analyse no longer exists', async () => {
+    const { element, http, settle } = await loaded();
+    element.querySelector<HTMLButtonElement>('button[aria-label="Analyse alpha"]')?.click();
+    await settle();
+    for (const scope of ['repo', 'user']) {
+      http
+        .expectOne((r) => r.url === '/api/analysis/run/r1' && r.params.get('scope') === scope)
+        .flush(null, { status: 404, statusText: 'Not Found' });
+    }
+    await settle();
+    expect(TestBed.inject(ToastService).toasts()[0]).toMatchObject({
+      title: 'Not found',
+      detail: 'That repository no longer exists — re-import from GitHub.',
+    });
   });
 
   it('shows an import prompt when nothing is imported', async () => {

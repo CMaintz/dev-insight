@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SessionStore } from '../../core/auth/session.store';
+import { formatShare } from '../../shared/format/format';
+import { DIMENSION_WEIGHTS } from '../../shared/format/metrics';
 import { jumpToFragment } from '../../shared/util/jump-to';
 
 @Component({
@@ -30,17 +32,17 @@ export class LandingPage {
   protected readonly dimensions = [
     {
       name: 'Activity',
-      weight: '30%',
+      weight: formatShare(DIMENSION_WEIGHTS.activity),
       text: 'Commit frequency, recency and consistency over the last two years.',
     },
     {
       name: 'Structure',
-      weight: '30%',
+      weight: formatShare(DIMENSION_WEIGHTS.structure),
       text: 'File sizes, folder depth and monolith indicators in the codebase.',
     },
     {
       name: 'Quality',
-      weight: '40%',
+      weight: formatShare(DIMENSION_WEIGHTS.quality),
       text: 'Tests, README, lint and CI configuration, plus commit hygiene.',
     },
   ];

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileApi } from '../../core/api/profile.api';
-import { resultOrNothing } from '../../core/http/surfaced-errors';
+import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { SessionStore } from '../../core/auth/session.store';
 import { Profile, ProfileUpdate } from '../../core/models/api.models';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -48,6 +48,7 @@ export function toProfileUpdate(value: {
 export class SettingsPage {
   private readonly api = inject(ProfileApi);
   private readonly toasts = inject(ToastService);
+  private readonly errors = inject(UserActionErrors);
   protected readonly session = inject(SessionStore);
 
   protected readonly form = createProfileForm(this.session.profile());
@@ -61,8 +62,9 @@ export class SettingsPage {
       return;
     }
     this.saving.set(true);
-    const profile = await resultOrNothing(
+    const profile = await this.errors.resultOrNothing(
       this.api.update(toProfileUpdate(this.form.getRawValue())),
+      'Your account was not found — please sign in again.',
     );
     this.saving.set(false);
     if (profile) {

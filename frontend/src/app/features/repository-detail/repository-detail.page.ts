@@ -4,7 +4,7 @@ import { RunTracker } from '../../core/analysis/run-tracker';
 import { AnalysisApi } from '../../core/api/analysis.api';
 import { ReposApi } from '../../core/api/repos.api';
 import { isNotFound } from '../../core/http/problem-details';
-import { errorAlreadyShownByInterceptor } from '../../core/http/surfaced-errors';
+import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { ScopePreference } from '../../core/scope/scope-preference';
 import { languageShares } from '../../shared/charts/chart-data';
 import { ActivityChart, LanguagesChart, ScoreEvolutionChart } from '../../shared/charts/charts';
@@ -36,6 +36,7 @@ import { MetricBreakdown } from './metric-breakdown';
 export class RepositoryDetailPage {
   private readonly analysisApi = inject(AnalysisApi);
   protected readonly tracker = inject(RunTracker);
+  private readonly errors = inject(UserActionErrors);
   protected readonly scope = inject(ScopePreference).scope;
 
   readonly id = input.required<string>();
@@ -71,6 +72,10 @@ export class RepositoryDetailPage {
   }
 
   protected async analyse(): Promise<void> {
-    await this.tracker.analyse(this.id()).catch(errorAlreadyShownByInterceptor);
+    await this.tracker
+      .analyse(this.id())
+      .catch((error: unknown) =>
+        this.errors.handle(error, 'That repository no longer exists — re-import from GitHub.'),
+      );
   }
 }

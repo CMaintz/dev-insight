@@ -35,3 +35,10 @@ function optionalUrlValidator(key: string, test: (value: string) => boolean): Va
 export const httpsUrlValidator: ValidatorFn = optionalUrlValidator('httpsUrl', isHttpsUrl);
 
 export const linkedInUrlValidator: ValidatorFn = optionalUrlValidator('linkedInUrl', isLinkedInUrl);
+
+export const notBlankValidator: ValidatorFn = (
+  control: AbstractControl<string | null>,
+): ValidationErrors | null => {
+  const value = control.value;
+  return value && value.trim().length === 0 ? { blank: true } : null;
+};

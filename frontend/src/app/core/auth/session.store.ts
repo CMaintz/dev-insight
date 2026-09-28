@@ -1,9 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { ProfileApi } from '../api/profile.api';
-import { resultOrNothing } from '../http/surfaced-errors';
+import { RunTracker } from '../analysis/run-tracker';
 import { AppConfig } from '../config/app-config';
 import { Profile } from '../models/api.models';
 import { AuthTokenStore } from './auth-token.store';
@@ -37,9 +37,11 @@ export class SessionStore {
   private readonly location = inject(BROWSER_LOCATION);
   private readonly config = inject(AppConfig);
   private readonly tokens = inject(AuthTokenStore);
+  private readonly runs = inject(RunTracker);
 
   private readonly state = signal<SessionState>({ status: 'unknown', profile: null });
   private pending: Promise<Profile | null> | null = null;
+  private probeGeneration = 0;
 
   readonly status = computed(() => this.state().status);
   readonly profile = computed(() => this.state().profile);
@@ -49,18 +51,23 @@ export class SessionStore {
     if (this.state().status !== 'unknown') {
       return Promise.resolve(this.state().profile);
     }
-    this.pending ??= firstValueFrom(this.api.me()).then(
-      (profile) => {
+    this.pending ??= this.probe(++this.probeGeneration);
+    return this.pending;
+  }
+
+  private async probe(generation: number): Promise<Profile | null> {
+    try {
+      const profile = await firstValueFrom(this.api.me());
+      if (generation === this.probeGeneration) {
         this.setProfile(profile);
-        return profile;
-      },
-      (error: unknown) => {
+      }
+    } catch (error) {
+      if (generation === this.probeGeneration) {
         this.dropTokenIfRejected(error);
         this.markSignedOut();
-        return null;
-      },
-    );
-    return this.pending;
+      }
+    }
+    return this.state().profile;
   }
 
   refresh(): Promise<Profile | null> {
@@ -71,11 +78,14 @@ export class SessionStore {
 
   setProfile(profile: Profile): void {
     this.pending = null;
+    this.probeGeneration++;
     this.state.set({ status: 'authenticated', profile });
   }
 
   markSignedOut(): void {
     this.pending = null;
+    this.probeGeneration++;
+    this.runs.stopAll();
     this.state.set({ status: 'anonymous', profile: null });
   }
 
@@ -90,7 +100,7 @@ export class SessionStore {
   }
 
   async logout(): Promise<void> {
-    await resultOrNothing(this.api.logout());
+    await firstValueFrom(this.api.logout().pipe(catchError(() => of(null))));
     this.tokens.clear();
     this.markSignedOut();
     await this.router.navigateByUrl('/');

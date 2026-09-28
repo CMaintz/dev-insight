@@ -15,24 +15,46 @@ describe('loadAppConfig', () => {
     expect(config).toEqual({ apiBaseUrl: 'https://api.example' });
   });
 
-  it('falls back to same origin on HTTP errors, bad JSON or network failure', async () => {
+  it('reports failure (null) for HTTP errors, bad JSON, network failure or a malformed value', async () => {
     const base = 'http://localhost:4200/';
-    expect(await loadAppConfig(() => Promise.resolve(response(null, false)), base)).toEqual({
-      apiBaseUrl: '',
-    });
-    expect(await loadAppConfig(() => Promise.resolve(response(null)), base)).toEqual({
-      apiBaseUrl: '',
-    });
-    expect(await loadAppConfig(() => Promise.reject(new Error('offline')), base)).toEqual({
-      apiBaseUrl: '',
-    });
-    expect(await loadAppConfig(() => Promise.resolve(response({ apiBaseUrl: 42 })), base)).toEqual({
-      apiBaseUrl: '',
-    });
+    const bodies: [unknown, boolean][] = [
+      [null, false],
+      [null, true],
+      [{ apiBaseUrl: 42 }, true],
+      [{}, true],
+      [{ apiBaseUrl: 'not a url' }, true],
+      [{ apiBaseUrl: 'ftp://api.example' }, true],
+    ];
+    for (const [body, ok] of bodies) {
+      expect(await loadAppConfig(() => Promise.resolve(response(body, ok)), base)).toBeNull();
+    }
+    expect(await loadAppConfig(() => Promise.reject(new Error('offline')), base)).toBeNull();
+  });
+
+  it('accepts an explicit empty base URL as same origin', async () => {
+    const config = await loadAppConfig(
+      () => Promise.resolve(response({ apiBaseUrl: '' })),
+      'http://x/',
+    );
+    expect(config).toEqual({ apiBaseUrl: '' });
   });
 });
 
 describe('AppConfig', () => {
+  it('flags a failed load instead of silently using same origin', () => {
+    const config = TestBed.inject(AppConfig);
+    expect(config.loadFailed()).toBe(false);
+    config.applyLoaded(null);
+    expect(config.loadFailed()).toBe(true);
+  });
+
+  it('applies a loaded config', () => {
+    const config = TestBed.inject(AppConfig);
+    config.applyLoaded({ apiBaseUrl: 'https://api.example/' });
+    expect(config.loadFailed()).toBe(false);
+    expect(config.apiBaseUrl()).toBe('https://api.example');
+  });
+
   it('normalises trailing slashes and whitespace in the base URL', () => {
     const config = TestBed.inject(AppConfig);
     config.set({ apiBaseUrl: ' https://api.example/// ' });

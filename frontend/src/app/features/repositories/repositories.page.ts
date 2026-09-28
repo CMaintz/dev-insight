@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { RunTracker } from '../../core/analysis/run-tracker';
 import { WorkspaceActions } from '../../core/analysis/workspace-actions';
 import { ReposApi } from '../../core/api/repos.api';
-import { errorAlreadyShownByInterceptor } from '../../core/http/surfaced-errors';
+import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { Repository } from '../../core/models/api.models';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { WorkspaceActionsBar } from '../../shared/ui/workspace-actions-bar';
@@ -27,6 +27,7 @@ import { RepoRow } from './repo-row';
 export class RepositoriesPage {
   private readonly api = inject(ReposApi);
   protected readonly tracker = inject(RunTracker);
+  private readonly errors = inject(UserActionErrors);
   protected readonly actions = inject(WorkspaceActions);
 
   protected readonly repos = this.api.listResource();
@@ -69,7 +70,11 @@ export class RepositoriesPage {
   }
 
   protected async analyse(repo: Repository): Promise<void> {
-    await this.tracker.analyse(repo.id).catch(errorAlreadyShownByInterceptor);
+    await this.tracker
+      .analyse(repo.id)
+      .catch((error: unknown) =>
+        this.errors.handle(error, 'That repository no longer exists — re-import from GitHub.'),
+      );
   }
 
   private replace(updated: Repository): void {

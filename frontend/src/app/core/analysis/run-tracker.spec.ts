@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { aRun } from '../../../testing/fixtures';
 import { AnalysisApi } from '../api/analysis.api';
 import { AnalysisRun } from '../models/api.models';
@@ -76,10 +76,56 @@ describe('RunTracker', () => {
     expect(tracker.stateFor('r1').phase).toBe('failed');
   });
 
-  it('marks a run failed when polling errors', async () => {
+  it('marks a run as lost when polling errors', async () => {
     await tracker.analyse('r1', ['repo']);
     polls.get('r1-repo')?.error(new Error('network'));
-    expect(tracker.stateFor('r1').phase).toBe('failed');
+    expect(tracker.stateFor('r1').phase).toBe('timedOut');
+    expect(tracker.activeCount()).toBe(0);
+  });
+
+  it('times out a run when polling gives up without a final status', async () => {
+    await tracker.analyse('r1', ['repo']);
+    polls.get('r1-repo')?.next(aRun({ id: 'r1-repo', status: 'running' }));
+    polls.get('r1-repo')?.complete();
+
+    const state = tracker.stateFor('r1');
+    expect(state.phase).toBe('timedOut');
+    expect(state.error).toContain('refresh later');
+    expect(tracker.activeCount()).toBe(0);
+    expect(tracker.settledCount()).toBe(1);
+    expect(toastError).toHaveBeenCalledWith('Lost track of an analysis run', state.error);
+  });
+
+  it('cancels the old poll when the same repository is analysed again', async () => {
+    await tracker.analyse('r1', ['repo']);
+    const oldPoll = polls.get('r1-repo');
+    api.run.mockReturnValue(of(aRun({ id: 'second', repositoryId: 'r1' })));
+    await tracker.analyse('r1', ['repo']);
+
+    expect(oldPoll?.observed).toBe(false);
+    oldPoll?.next(aRun({ id: 'r1-repo', status: 'succeeded' }));
+    expect(tracker.settledCount()).toBe(0);
+    expect(tracker.activeCount()).toBe(1);
+  });
+
+  it('stops every poll and forgets all runs on stopAll', async () => {
+    await tracker.analyse('r1');
+    tracker.stopAll();
+    expect(polls.get('r1-repo')?.observed).toBe(false);
+    expect(polls.get('r1-user')?.observed).toBe(false);
+    expect(tracker.activeCount()).toBe(0);
+    expect(tracker.stateFor('r1').phase).toBe('idle');
+  });
+
+  it('keeps tracking the scope that started when the other scope fails', async () => {
+    api.run.mockImplementation((repoId: string, scope: string) =>
+      scope === 'user'
+        ? throwError(() => new Error('boom'))
+        : of(aRun({ id: `${repoId}-${scope}`, repositoryId: repoId })),
+    );
+    await expect(tracker.analyse('r1')).rejects.toThrow('boom');
+    expect(tracker.isActive('r1')).toBe(true);
+    expect(polls.has('r1-repo')).toBe(true);
   });
 
   it('tracks every run returned by run-all', async () => {

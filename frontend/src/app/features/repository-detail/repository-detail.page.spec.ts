@@ -64,6 +64,8 @@ describe('RepositoryDetailPage', () => {
     http.expectOne((r) => r.url === '/api/analysis/r1/history').flush([]);
     await settle();
     expect(text(element)).toContain('Repository not found');
+    expect(text(element)).not.toContain('Not analysed yet');
+    expect(text(element)).not.toContain('Analyse now');
   });
 });
 

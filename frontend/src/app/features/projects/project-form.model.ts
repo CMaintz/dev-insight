@@ -1,9 +1,9 @@
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Project, ProjectInput } from '../../core/models/api.models';
-import { httpsUrlValidator } from '../../shared/forms/validators';
+import { httpsUrlValidator, notBlankValidator } from '../../shared/forms/validators';
 
 export const NAME_MAX = 200;
-export const DESCRIPTION_MAX = 2000;
+export const DESCRIPTION_MAX = 4000;
 export const MAX_IMAGES = 10;
 
 export type ProjectFormGroup = FormGroup<{
@@ -25,7 +25,7 @@ export function createProjectForm(project: Project | null, nextSortOrder = 0): P
   return new FormGroup({
     name: new FormControl(project?.name ?? '', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(NAME_MAX)],
+      validators: [Validators.required, notBlankValidator, Validators.maxLength(NAME_MAX)],
     }),
     description: new FormControl(project?.description ?? '', {
       nonNullable: true,

@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { map } from 'rxjs';
 import { ProjectsApi } from '../../core/api/projects.api';
 import { ReposApi } from '../../core/api/repos.api';
-import { resultOrNothing } from '../../core/http/surfaced-errors';
+import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { Project, ProjectInput } from '../../core/models/api.models';
 import { ToastService } from '../../core/notifications/toast.service';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ProjectForm } from './project-form';
 import { nextSortOrder } from './project-form.model';
+
+const PROJECT_GONE = 'That project no longer exists — refresh the page.';
 
 interface Editing {
   project: Project | null;
@@ -23,11 +25,16 @@ interface Editing {
 export class ProjectsPage {
   private readonly api = inject(ProjectsApi);
   private readonly toasts = inject(ToastService);
+  private readonly errors = inject(UserActionErrors);
 
   protected readonly projects = this.api.listResource();
   protected readonly repos = inject(ReposApi).listResource();
 
   protected readonly editing = signal<Editing | null>(null);
+  protected readonly editTargets = computed(() => {
+    const editing = this.editing();
+    return editing ? [{ key: editing.project?.id ?? 'new', project: editing.project }] : [];
+  });
   protected readonly saving = signal(false);
   protected readonly confirmingDelete = signal<string | null>(null);
 
@@ -56,8 +63,9 @@ export class ProjectsPage {
       return;
     }
     this.saving.set(true);
-    const saved = await resultOrNothing(
+    const saved = await this.errors.resultOrNothing(
       current.project ? this.api.update(current.project.id, body) : this.api.create(body),
+      PROJECT_GONE,
     );
     this.saving.set(false);
     if (!saved) {
@@ -74,7 +82,10 @@ export class ProjectsPage {
       return;
     }
     this.confirmingDelete.set(null);
-    const deleted = await resultOrNothing(this.api.delete(project.id).pipe(map(() => true)));
+    const deleted = await this.errors.resultOrNothing(
+      this.api.delete(project.id).pipe(map(() => true)),
+      PROJECT_GONE,
+    );
     if (deleted) {
       this.projects.update((list) => (list ?? []).filter((p) => p.id !== project.id));
       this.toasts.success('Project deleted', project.name);

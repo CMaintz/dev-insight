@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { aProfile } from '../../../testing/fixtures';
+import { RunTracker } from '../analysis/run-tracker';
 import { AppConfig } from '../config/app-config';
 import { AuthTokenStore } from './auth-token.store';
 import { BROWSER_LOCATION } from './browser-location';
@@ -60,6 +61,31 @@ describe('SessionStore', () => {
     controller.expectOne('/api/me').flush(null, { status: 503, statusText: 'Down' });
     await pending;
     expect(TestBed.inject(AuthTokenStore).token()).toBe('ok');
+  });
+
+  it('ignores a stale probe 401 that answers after a fresh token was exchanged', async () => {
+    const bootProbe = store.ensureLoaded();
+    const [staleRequest] = controller.match('/api/me');
+
+    TestBed.inject(AuthTokenStore).set('fresh');
+    const refreshed = store.refresh();
+    const [freshRequest] = controller.match('/api/me');
+
+    staleRequest.flush(null, { status: 401, statusText: 'Unauthorized' });
+    await bootProbe;
+    expect(TestBed.inject(AuthTokenStore).token()).toBe('fresh');
+    expect(store.status()).toBe('unknown');
+
+    freshRequest.flush(aProfile());
+    await refreshed;
+    expect(store.isAuthenticated()).toBe(true);
+    expect(TestBed.inject(AuthTokenStore).token()).toBe('fresh');
+  });
+
+  it('stops all analysis polling when the session ends', () => {
+    const stopAll = vi.spyOn(TestBed.inject(RunTracker), 'stopAll');
+    store.markSignedOut();
+    expect(stopAll).toHaveBeenCalled();
   });
 
   it('refresh re-probes the profile', async () => {

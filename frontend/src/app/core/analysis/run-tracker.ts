@@ -1,11 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { AnalysisApi } from '../api/analysis.api';
 import { AnalysisRun, ScopeParam } from '../models/api.models';
 import { ToastService } from '../notifications/toast.service';
 import { RunPoller, isTerminal } from './run-poller';
 
-type RunPhase = 'idle' | 'active' | 'succeeded' | 'failed';
+type RunPhase = 'idle' | 'active' | 'succeeded' | 'failed' | 'timedOut';
 
 export interface RepoRunState {
   phase: RunPhase;
@@ -13,9 +13,14 @@ export interface RepoRunState {
   error?: string;
 }
 
-const IDLE: RepoRunState = { phase: 'idle', label: '' };
+interface TrackedRun extends AnalysisRun {
+  lostTrack?: boolean;
+}
 
-function summariseRuns(runs: readonly AnalysisRun[]): RepoRunState {
+const IDLE: RepoRunState = { phase: 'idle', label: '' };
+const LOST_TRACK_MESSAGE = 'We lost track of this run — refresh later to see its result.';
+
+function summariseRuns(runs: readonly TrackedRun[]): RepoRunState {
   if (runs.length === 0) {
     return IDLE;
   }
@@ -28,6 +33,9 @@ function summariseRuns(runs: readonly AnalysisRun[]): RepoRunState {
       phase: 'active',
       label: runs.length > 1 ? `${label} (${done}/${runs.length})` : label,
     };
+  }
+  if (runs.some((run) => run.lostTrack)) {
+    return { phase: 'timedOut', label: 'Timed out', error: LOST_TRACK_MESSAGE };
   }
   const failed = runs.find((run) => run.status === 'failed');
   if (failed) {
@@ -44,7 +52,8 @@ export class RunTracker {
   private readonly poller = inject(RunPoller);
   private readonly toasts = inject(ToastService);
 
-  private readonly runs = signal<Record<string, AnalysisRun>>({});
+  private readonly runs = signal<Record<string, TrackedRun>>({});
+  private readonly polls = new Map<string, Subscription>();
 
   readonly settledCount = signal(0);
   readonly activeCount = computed(
@@ -63,10 +72,18 @@ export class RunTracker {
 
   async analyse(repositoryId: string, scopes: readonly ScopeParam[] = ALL_SCOPES): Promise<void> {
     this.forget(repositoryId);
-    const started = await Promise.all(
+    const outcomes = await Promise.allSettled(
       scopes.map((scope) => firstValueFrom(this.api.run(repositoryId, scope))),
     );
-    started.forEach((run) => this.track(run));
+    for (const outcome of outcomes) {
+      if (outcome.status === 'fulfilled') {
+        this.track(outcome.value);
+      }
+    }
+    const firstFailure = outcomes.find((outcome) => outcome.status === 'rejected');
+    if (firstFailure) {
+      throw firstFailure.reason;
+    }
   }
 
   async analyseAll(): Promise<number> {
@@ -75,7 +92,15 @@ export class RunTracker {
     return started.length;
   }
 
+  stopAll(): void {
+    this.polls.forEach((subscription) => subscription.unsubscribe());
+    this.polls.clear();
+    this.runs.set({});
+  }
+
   private forget(repositoryId: string): void {
+    const forgotten = Object.values(this.runs()).filter((run) => run.repositoryId === repositoryId);
+    forgotten.forEach((run) => this.stopPolling(run.id));
     this.runs.update((all) =>
       Object.fromEntries(
         Object.entries(all).filter(([, run]) => run.repositoryId !== repositoryId),
@@ -83,14 +108,26 @@ export class RunTracker {
     );
   }
 
-  private upsert(run: AnalysisRun): void {
+  private stopPolling(runId: string): void {
+    this.polls.get(runId)?.unsubscribe();
+    this.polls.delete(runId);
+  }
+
+  private upsert(run: TrackedRun): void {
     this.runs.update((all) => ({ ...all, [run.id]: run }));
-    if (isTerminal(run.status)) {
-      this.settledCount.update((n) => n + 1);
-      if (run.status === 'failed') {
-        this.toasts.error('An analysis run failed', run.error ?? undefined);
-      }
+    if (!isTerminal(run.status)) {
+      return;
     }
+    this.settledCount.update((n) => n + 1);
+    if (run.lostTrack) {
+      this.toasts.error('Lost track of an analysis run', LOST_TRACK_MESSAGE);
+    } else if (run.status === 'failed') {
+      this.toasts.error('An analysis run failed', run.error ?? undefined);
+    }
+  }
+
+  private markLostTrack(run: AnalysisRun): void {
+    this.upsert({ ...run, status: 'failed', error: LOST_TRACK_MESSAGE, lostTrack: true });
   }
 
   private track(run: AnalysisRun): void {
@@ -98,10 +135,25 @@ export class RunTracker {
     if (isTerminal(run.status)) {
       return;
     }
-    this.poller.poll(run.id).subscribe({
-      next: (update) => this.upsert(update),
-      error: () =>
-        this.upsert({ ...run, status: 'failed', error: 'Lost track of this run — refresh later' }),
+    let latest = run;
+    const subscription = this.poller.poll(run.id).subscribe({
+      next: (update) => {
+        latest = update;
+        this.upsert(update);
+      },
+      error: () => {
+        this.polls.delete(run.id);
+        this.markLostTrack(latest);
+      },
+      complete: () => {
+        this.polls.delete(run.id);
+        if (!isTerminal(latest.status)) {
+          this.markLostTrack(latest);
+        }
+      },
     });
+    if (!subscription.closed) {
+      this.polls.set(run.id, subscription);
+    }
   }
 }

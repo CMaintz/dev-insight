@@ -9,9 +9,9 @@
     }
   </header>
 
-  @if (editing(); as e) {
+  @for (target of editTargets(); track target.key) {
     <app-project-form
-      [project]="e.project"
+      [project]="target.project"
       [repositories]="repoList()"
       [defaultSortOrder]="nextSort()"
       [saving]="saving()"
@@ -51,7 +51,12 @@
           </div>
           <div class="project__actions">
             <button type="button" class="btn btn--sm" (click)="startEdit(project)">Edit</button>
-            <button type="button" class="btn btn--sm btn--danger" (click)="remove(project)">
+            <button
+              type="button"
+              class="btn btn--sm btn--danger"
+              (click)="remove(project)"
+              [disabled]="!!editing()"
+            >
               {{ confirmingDelete() === project.id ? 'Confirm delete' : 'Delete' }}
             </button>
           </div>

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Scores } from '../../core/models/api.models';
+import { formatShare } from '../format/format';
+import { DIMENSION_WEIGHTS } from '../format/metrics';
 import { ScoreRing } from './score-ring';
-
-const DIMENSION_WEIGHTS = { activity: '30%', structure: '30%', quality: '40%' } as const;
 
 @Component({
   selector: 'app-score-breakdown',
@@ -41,8 +41,8 @@ export class ScoreBreakdown {
 
   protected readonly dimensions = computed(() => {
     const scores = this.scores();
-    const label = (name: string, weight: string) =>
-      this.showWeights() ? `${name} · ${weight}` : name;
+    const label = (name: string, weight: number) =>
+      this.showWeights() ? `${name} · ${formatShare(weight)}` : name;
     return [
       { label: label('Activity', DIMENSION_WEIGHTS.activity), score: scores.activity },
       { label: label('Structure', DIMENSION_WEIGHTS.structure), score: scores.structure },

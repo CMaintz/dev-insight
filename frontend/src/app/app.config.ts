@@ -23,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     // Runtime config (API base URL) must be known before the first HTTP request.
     provideAppInitializer(() => {
       const config = inject(AppConfig);
-      return loadAppConfig().then((data) => config.set(data));
+      return loadAppConfig().then((data) => config.applyLoaded(data));
     }),
     // Order matters: errors see the relative URL; the bearer token is attached only to our
     // relative API paths; the base URL is applied last.

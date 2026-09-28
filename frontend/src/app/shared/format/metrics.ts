@@ -1,6 +1,8 @@
 import { Metric, MetricCategory } from '../../core/models/api.models';
 import { formatDecimal, formatInteger, formatShare } from './format';
 
+export const DIMENSION_WEIGHTS = { activity: 0.3, structure: 0.3, quality: 0.4 } as const;
+
 export const CATEGORY_LABELS: Record<MetricCategory, string> = {
   activity: 'Activity',
   commitQuality: 'Commit quality',

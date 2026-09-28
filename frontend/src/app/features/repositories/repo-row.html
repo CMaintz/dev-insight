@@ -36,20 +36,27 @@
   </div>
 
   <div class="row__run">
-    @switch (run().phase) {
-      @case ('active') {
-        <div class="run" role="status">
-          <span class="small">{{ run().label }}…</span>
-          <div class="progress" aria-hidden="true"></div>
-        </div>
+    <div class="run-status" role="status">
+      @switch (run().phase) {
+        @case ('active') {
+          <div class="run">
+            <span class="small">{{ run().label }}…</span>
+            <div class="progress" aria-hidden="true"></div>
+          </div>
+        }
+        @case ('failed') {
+          <span class="small run--failed" [attr.title]="run().error">Failed</span>
+        }
+        @case ('timedOut') {
+          <span class="small run--failed" [attr.title]="run().error"
+            >Timed out — refresh later</span
+          >
+        }
+        @case ('succeeded') {
+          <a class="small" [routerLink]="['/repositories', repo().id]">View results</a>
+        }
       }
-      @case ('failed') {
-        <span class="small run--failed" role="status" [attr.title]="run().error">Failed</span>
-      }
-      @case ('succeeded') {
-        <a class="small" [routerLink]="['/repositories', repo().id]" role="status">View results</a>
-      }
-    }
+    </div>
     <button
       type="button"
       class="btn btn--sm"

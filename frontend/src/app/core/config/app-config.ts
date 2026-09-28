@@ -16,32 +16,63 @@ function joinApiUrl(base: string, path: string): string {
 
 type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
+function isUsableBaseUrl(value: string): boolean {
+  if (value === '') {
+    return true;
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+function parseConfig(body: unknown): AppConfigData | null {
+  if (!body || typeof body !== 'object') {
+    return null;
+  }
+  const apiBaseUrl = (body as Partial<Record<keyof AppConfigData, unknown>>).apiBaseUrl;
+  if (typeof apiBaseUrl !== 'string') {
+    return null;
+  }
+  const normalised = normaliseBaseUrl(apiBaseUrl);
+  return isUsableBaseUrl(normalised) ? { apiBaseUrl: normalised } : null;
+}
+
 export async function loadAppConfig(
   fetchFn: FetchFn = (input, init) => fetch(input, init),
   baseUri: string = document.baseURI,
-): Promise<AppConfigData> {
+): Promise<AppConfigData | null> {
   try {
     const response = await fetchFn(new URL('config.json', baseUri).toString(), {
       cache: 'no-store',
     });
-    if (!response.ok) {
-      return DEFAULT_CONFIG;
-    }
-    const body = (await response.json()) as Partial<AppConfigData> | null;
-    return { apiBaseUrl: normaliseBaseUrl(body?.apiBaseUrl) };
+    return response.ok ? parseConfig(await response.json()) : null;
   } catch {
-    return DEFAULT_CONFIG;
+    return null;
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class AppConfig {
   private readonly data = signal<AppConfigData>(DEFAULT_CONFIG);
+  private readonly failed = signal(false);
+
+  readonly loadFailed = this.failed.asReadonly();
 
   readonly apiBaseUrl = () => this.data().apiBaseUrl;
 
   set(data: AppConfigData): void {
     this.data.set({ apiBaseUrl: normaliseBaseUrl(data.apiBaseUrl) });
+  }
+
+  applyLoaded(data: AppConfigData | null): void {
+    if (data) {
+      this.set(data);
+    } else {
+      this.failed.set(true);
+    }
   }
 
   apiUrl(path: string): string {
