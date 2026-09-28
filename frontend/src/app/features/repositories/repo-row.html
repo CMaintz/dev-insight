@@ -1,0 +1,70 @@
+<div class="row" [class.is-selected]="repo().isSelected">
+  <div class="row__select">
+    <input
+      type="checkbox"
+      [id]="checkboxId()"
+      [checked]="repo().isSelected"
+      [disabled]="saving()"
+      (change)="onToggle($event)"
+    />
+    <label [for]="checkboxId()" class="visually-hidden">
+      Include {{ repo().name }} in scores and portfolio
+    </label>
+  </div>
+
+  <div class="row__main">
+    <div class="row__title">
+      <a [routerLink]="['/repositories', repo().id]">{{ repo().name }}</a>
+      @if (repo().isPrivate) {
+        <span class="chip">private</span>
+      }
+      @if (repo().isFork) {
+        <span class="chip">fork</span>
+      }
+      @if (repo().isArchived) {
+        <span class="chip">archived</span>
+      }
+    </div>
+    @if (repo().description) {
+      <p class="row__desc">{{ repo().description }}</p>
+    }
+    <ul class="row__meta list-reset" aria-label="Repository facts">
+      @if (repo().language) {
+        <li>{{ repo().language }}</li>
+      }
+      <li>
+        <span aria-hidden="true">★</span> {{ stars() }}<span class="visually-hidden"> stars</span>
+      </li>
+      <li>
+        <span aria-hidden="true">⑂</span> {{ forks() }}<span class="visually-hidden"> forks</span>
+      </li>
+      <li>Active {{ lastActivity() }}</li>
+    </ul>
+  </div>
+
+  <div class="row__run">
+    @switch (run().phase) {
+      @case ('active') {
+        <div class="run" role="status">
+          <span class="small">{{ run().label }}…</span>
+          <div class="progress" aria-hidden="true"></div>
+        </div>
+      }
+      @case ('failed') {
+        <span class="small run--failed" role="status" [attr.title]="run().error">Failed</span>
+      }
+      @case ('succeeded') {
+        <a class="small" [routerLink]="['/repositories', repo().id]" role="status">View results</a>
+      }
+    }
+    <button
+      type="button"
+      class="btn btn--sm"
+      (click)="analyse.emit()"
+      [disabled]="run().phase === 'active'"
+      [attr.aria-label]="'Analyse ' + repo().name"
+    >
+      Analyse
+    </button>
+  </div>
+</div>

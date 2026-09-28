@@ -1,0 +1,39 @@
+<article class="pcard pcard--project">
+  @if (image(); as src) {
+    <img
+      class="pcard__image"
+      [src]="src"
+      [alt]="'Screenshot of ' + project().name"
+      loading="lazy"
+    />
+  }
+  @if (project().imageUrls.length > 1) {
+    <div class="pcard__thumbs" role="group" [attr.aria-label]="'Screenshots of ' + project().name">
+      @for (url of project().imageUrls; track $index) {
+        <button
+          type="button"
+          class="thumb"
+          [class.is-active]="$index === imageIndex()"
+          [attr.aria-pressed]="$index === imageIndex()"
+          [attr.aria-label]="'Show screenshot ' + ($index + 1)"
+          (click)="show($index)"
+        >
+          <img [src]="url" alt="" loading="lazy" />
+        </button>
+      }
+    </div>
+  }
+  <div class="pcard__body">
+    <h3>{{ project().name }}</h3>
+    @if (project().description) {
+      <p class="pcard__desc">{{ project().description }}</p>
+    }
+    @if (linked().length > 0) {
+      <ul class="pcard__meta list-reset" aria-label="Repositories in this project">
+        @for (name of linked(); track name) {
+          <li class="chip">{{ name }}</li>
+        }
+      </ul>
+    }
+  </div>
+</article>

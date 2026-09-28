@@ -1,0 +1,58 @@
+<div class="groups">
+  @for (group of groups(); track group.category) {
+    <section class="group" [attr.aria-labelledby]="'metrics-' + group.category">
+      <header class="group__head">
+        <h3 [id]="'metrics-' + group.category">{{ group.label }}</h3>
+        @if (group.score !== null) {
+          <span class="chip">dimension score {{ group.score }}</span>
+        }
+      </header>
+      <div class="table-wrap">
+        <table class="data-table">
+          <caption class="visually-hidden">
+            {{
+              group.label
+            }}
+            metrics: value, points earned (0–100) and weight within the dimension
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Metric</th>
+              <th scope="col" class="num">Value</th>
+              <th scope="col">Points</th>
+              <th scope="col" class="num">Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of group.rows; track row.name) {
+              <tr [class.is-info]="!row.scored">
+                <th scope="row">
+                  {{ row.label }}
+                  @if (!row.scored) {
+                    <span class="chip" title="Shown for context; does not affect the score">
+                      informational
+                    </span>
+                  }
+                </th>
+                <td class="num">{{ row.value }}</td>
+                <td>
+                  @if (row.points !== null) {
+                    <div class="points">
+                      <span class="points__bar" aria-hidden="true">
+                        <span [style.width.%]="row.points"></span>
+                      </span>
+                      <span class="points__value">{{ row.points }}</span>
+                    </div>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="num">{{ row.weight }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

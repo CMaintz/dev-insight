@@ -1,0 +1,105 @@
+<div class="page portfolio">
+  @if (data(); as p) {
+    @if (isOwnerPreview()) {
+      <aside class="preview" role="note">
+        <strong>Preview.</strong> This portfolio is not published — only you can see it.
+        <a routerLink="/settings">Publish it in settings</a>
+      </aside>
+    }
+
+    <app-portfolio-hero [owner]="p.owner" [scores]="p.scores" />
+
+    @if (highlights(); as h) {
+      <section class="grid grid--kpis" aria-label="Highlights">
+        <app-kpi-tile label="Showcased repositories" [value]="h.repositories" />
+        <app-kpi-tile label="Commits (last 2 years)" [value]="h.commits" hint="own contributions" />
+        <app-kpi-tile
+          label="Active weeks"
+          [value]="h.activeWeeks"
+          hint="weeks with at least one commit"
+        />
+        <app-kpi-tile label="Main language" [value]="h.topLanguage" />
+      </section>
+    }
+
+    <section class="card" aria-label="Activity over time">
+      <app-activity-chart [weeks]="p.activity" heading="Commits per week — own contributions" />
+    </section>
+
+    <div class="grid grid--2">
+      <section class="card" aria-label="Score evolution">
+        <app-score-evolution-chart [points]="p.scoreEvolution" heading="How the scores evolved" />
+      </section>
+      <section class="card" aria-label="Languages">
+        <app-languages-chart [languages]="p.languages" heading="Languages written" />
+      </section>
+    </div>
+
+    @if (p.strengths.length > 0) {
+      <section aria-labelledby="strengths-title">
+        <h2 id="strengths-title" class="section-title">Strengths</h2>
+        <ul class="strengths list-reset">
+          @for (s of p.strengths; track $index) {
+            <li class="strength">
+              <span class="strength__icon" aria-hidden="true">✓</span>
+              <div>
+                <strong>{{ s.title }}</strong>
+                <p class="muted small">{{ s.message }}</p>
+                <span class="chip">{{ s.repositoryName }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (p.projects.length > 0) {
+      <section aria-labelledby="projects-title">
+        <h2 id="projects-title" class="section-title">Projects</h2>
+        <ul class="grid grid--cards list-reset">
+          @for (project of p.projects; track project.id) {
+            <li><app-portfolio-project-card [project]="project" [repoNames]="repoNames()" /></li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section aria-labelledby="repos-title">
+      <h2 id="repos-title" class="section-title">Repositories</h2>
+      <ul class="grid grid--cards list-reset">
+        @for (repo of p.repositories; track repo.id) {
+          <li><app-portfolio-repo-card [repo]="repo" /></li>
+        } @empty {
+          <li class="muted">No repositories showcased yet.</li>
+        }
+      </ul>
+    </section>
+
+    <footer class="footer muted small">
+      Scores are computed by DevInsight from {{ '@' + p.owner.login }}'s own commits on GitHub and
+      update with every analysis. Each score traces back to measurable metrics.
+    </footer>
+  } @else if (notFound()) {
+    <app-empty-state
+      icon="🔭"
+      heading="Portfolio not found"
+      text="This portfolio does not exist or has not been published yet."
+    >
+      <a class="btn btn--primary" routerLink="/">What is DevInsight?</a>
+    </app-empty-state>
+  } @else if (portfolio.error()) {
+    <app-empty-state
+      icon="⚠"
+      heading="Could not load this portfolio"
+      text="Please try again shortly."
+    >
+      <button type="button" class="btn" (click)="portfolio.reload()">Retry</button>
+    </app-empty-state>
+  } @else {
+    <div class="skeleton hero-skeleton" aria-busy="true" aria-label="Loading portfolio"></div>
+    <div class="grid grid--2">
+      <div class="skeleton tall"></div>
+      <div class="skeleton tall"></div>
+    </div>
+  }
+</div>

@@ -1,0 +1,138 @@
+/* DevInsight design tokens + base styles. Component styles consume the custom properties. */
+@use 'styles/layout';
+@use 'styles/controls';
+@use 'styles/charts';
+
+:root {
+  color-scheme: light;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+
+  --page: #f6f6f3;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --surface-sunken: #efeee9;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.22);
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #6b6a66;
+  --accent: #2a78d6;
+  --accent-strong: #1c5cab;
+  --accent-text: #184f95;
+  --accent-soft: #e3eefc;
+  --on-accent: #ffffff;
+  --focus-ring: #2a78d6;
+  --meter-track: #e1e0d9;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #6b6a66;
+  --danger-text: #b42323;
+  --success-text: #006300;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.08);
+  --shadow-lg: 0 10px 30px rgba(11, 11, 11, 0.12);
+  --content-width: 72rem;
+}
+
+@mixin dark-tokens {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-raised: #232322;
+  --surface-sunken: #121211;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.22);
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #a3a29a;
+  --accent: #3987e5;
+  --accent-strong: #5598e7;
+  --accent-text: #9ec5f4;
+  --accent-soft: #152a45;
+  --on-accent: #ffffff;
+  --focus-ring: #6da7ec;
+  --meter-track: #2c2c2a;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #a3a29a;
+  --danger-text: #ff8a8a;
+  --success-text: #4cc94c;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-tokens;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-tokens;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--page);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+a {
+  color: var(--accent-text);
+  text-underline-offset: 2px;
+}
+
+img {
+  max-width: 100%;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

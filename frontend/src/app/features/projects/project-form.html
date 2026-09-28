@@ -1,0 +1,114 @@
+<form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <h2>{{ heading() }}</h2>
+
+  <div class="field">
+    <label for="project-name">Name</label>
+    <input
+      id="project-name"
+      class="input"
+      formControlName="name"
+      [attr.aria-invalid]="showError(form.controls.name)"
+      aria-describedby="project-name-error"
+    />
+    @if (showError(form.controls.name)) {
+      <span id="project-name-error" class="field__error">
+        @if (form.controls.name.hasError('required')) {
+          A name is required.
+        } @else {
+          Keep it under {{ nameMax }} characters.
+        }
+      </span>
+    }
+  </div>
+
+  <div class="field">
+    <label for="project-description">Description</label>
+    <textarea
+      id="project-description"
+      class="textarea"
+      formControlName="description"
+      [attr.aria-invalid]="showError(form.controls.description)"
+      aria-describedby="project-description-hint"
+    ></textarea>
+    <span id="project-description-hint" class="field__hint">
+      {{ form.controls.description.value.length }} / {{ descriptionMax }} characters
+    </span>
+  </div>
+
+  <fieldset class="field fieldset" formArrayName="imageUrls">
+    <legend class="field__label">Images</legend>
+    <span class="field__hint">Screenshots hosted over https (up to {{ maxImages }}).</span>
+    @for (control of imageUrls.controls; track control; let i = $index) {
+      <div class="image-row">
+        <label class="visually-hidden" [for]="'image-' + i">Image URL {{ i + 1 }}</label>
+        <input
+          [id]="'image-' + i"
+          class="input"
+          type="url"
+          inputmode="url"
+          placeholder="https://…"
+          [formControlName]="i"
+          [attr.aria-invalid]="showError(control)"
+        />
+        <button
+          type="button"
+          class="btn btn--sm btn--ghost"
+          (click)="removeImage(i)"
+          [attr.aria-label]="'Remove image ' + (i + 1)"
+        >
+          Remove
+        </button>
+      </div>
+      @if (showError(control)) {
+        <span class="field__error">Enter a full https:// URL.</span>
+      }
+    }
+    @if (imageUrls.length < maxImages) {
+      <button type="button" class="btn btn--sm add" (click)="addImage()">Add image URL</button>
+    }
+  </fieldset>
+
+  <fieldset class="field fieldset">
+    <legend class="field__label">Linked repositories</legend>
+    @if (repositories().length === 0) {
+      <span class="field__hint">Import repositories to link them.</span>
+    } @else {
+      <div class="repo-list">
+        @for (repo of repositories(); track repo.id) {
+          <label class="check">
+            <input
+              type="checkbox"
+              [checked]="isLinked(repo.id)"
+              (change)="toggleRepo(repo.id, $event)"
+            />
+            {{ repo.name }}
+          </label>
+        }
+      </div>
+    }
+  </fieldset>
+
+  <div class="field sort">
+    <label for="project-sort">Sort order</label>
+    <input
+      id="project-sort"
+      class="input"
+      type="number"
+      min="0"
+      step="1"
+      formControlName="sortOrder"
+      [attr.aria-invalid]="showError(form.controls.sortOrder)"
+    />
+    <span class="field__hint">Lower numbers appear first on your portfolio.</span>
+    @if (showError(form.controls.sortOrder)) {
+      <span class="field__error">Use a whole number of 0 or more.</span>
+    }
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Cancel</button>
+    <button type="submit" class="btn btn--primary" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : 'Save project' }}
+    </button>
+  </div>
+</form>

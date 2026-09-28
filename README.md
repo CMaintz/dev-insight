@@ -7,6 +7,7 @@ the opposite idea — show *how* someone develops, backed by data they can't fak
 GitHub repositories, measures activity, commit habits, structure and quality, turns those measurements
 into explainable scores and concrete feedback, and publishes the result as a living portfolio.
 
+- **Live:** https://cmaintz.github.io/DevInsight/ (once deployed)
 - **Private dashboard** — scores, activity over time, score evolution, language mix, commit-size
   distribution, and the most important feedback across your repositories.
 - **Explainable analysis** — every score is the weighted sum of stored metrics; the UI shows each
@@ -27,7 +28,8 @@ backend/
     DevInsight.Infrastructure  adapters: PostgreSQL (EF Core), GitHub (Octokit), git CLI, Claude, workers
     DevInsight.Api             ASP.NET Core minimal APIs, auth, OpenAPI, hosts the SPA
   tests/                       domain · application · infrastructure · architecture · API integration
-docs/       API.md (HTTP contract) · DECISIONS.md (every design decision and why)
+docs/       API.md · DEPLOYMENT.md · DECISIONS.md (every design decision and why)
+infra/      Bicep template for Azure Container Apps (+ PostgreSQL)
 ```
 
 Hexagonal (ports & adapters): dependencies point inward, and an architecture test fails the build if the
@@ -52,6 +54,7 @@ Exact formulas and thresholds: [`docs/DECISIONS.md`](docs/DECISIONS.md) §26 and
 ## Tech stack
 
 .NET 10 (C# 14) · ASP.NET Core minimal APIs · EF Core 10 + PostgreSQL 17 · Octokit · Anthropic C# SDK ·
+Azure Container Apps · Bicep · GitHub Actions (OIDC) · GitHub Pages ·
 Angular 22 · ngx-charts · xUnit v3 · Shouldly · NetArchTest · Testcontainers · Vitest · Docker · mise.
 
 ## Running locally
@@ -74,6 +77,9 @@ npm ci && npm start                            # SPA on :4200, proxies /api to :
 ```
 
 Open http://localhost:4200, sign in with GitHub, import, analyse, publish.
+
+**Production:** the SPA is on GitHub Pages and the API on Azure Container Apps — see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) and run `bash scripts/setup-azure.sh` once.
 
 **Everything in one container:** `cp .env.example .env`, fill it in (callback URL
 `http://localhost:8080/api/auth/github/callback`), then `docker compose up --build` → http://localhost:8080.

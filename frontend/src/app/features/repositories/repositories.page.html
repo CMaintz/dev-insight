@@ -1,0 +1,104 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Repositories</h1>
+      <p>
+        Select the repositories that represent your work. Selected repositories count toward your
+        scores and appear on your portfolio.
+      </p>
+    </div>
+    <div class="page-actions">
+      <button
+        type="button"
+        class="btn"
+        (click)="actions.importFromGitHub()"
+        [disabled]="actions.importing()"
+      >
+        {{ actions.importing() ? 'Importing…' : 'Import from GitHub' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        (click)="actions.analyseAllSelected()"
+        [disabled]="actions.startingAnalysis() || selectedCount() === 0"
+      >
+        Analyse all selected ({{ selectedCount() }})
+      </button>
+    </div>
+  </header>
+
+  @if (repos.status() === 'loading') {
+    <div class="skeleton" aria-busy="true" aria-label="Loading repositories"></div>
+  } @else if (repos.error()) {
+    <app-empty-state icon="⚠" heading="Could not load repositories" text="Try again in a moment.">
+      <button type="button" class="btn" (click)="repos.reload()">Retry</button>
+    </app-empty-state>
+  } @else if (repos.value().length === 0) {
+    <app-empty-state
+      icon="📦"
+      heading="No repositories imported"
+      text="Import your public and private GitHub repositories. You choose which ones to analyse."
+    >
+      <button type="button" class="btn btn--primary" (click)="actions.importFromGitHub()">
+        Import from GitHub
+      </button>
+    </app-empty-state>
+  } @else {
+    <form class="filters card" role="search" (submit)="$event.preventDefault()">
+      <div class="field">
+        <label for="repo-search">Search</label>
+        <input
+          id="repo-search"
+          class="input"
+          type="search"
+          placeholder="Name or description"
+          [value]="filter().query"
+          (input)="setFilter({ query: inputValue($event) })"
+        />
+      </div>
+      <div class="field">
+        <label for="repo-language">Language</label>
+        <select
+          id="repo-language"
+          class="select"
+          [value]="filter().language"
+          (change)="setFilter({ language: inputValue($event) })"
+        >
+          <option value="">All languages</option>
+          @for (lang of languages(); track lang) {
+            <option [value]="lang">{{ lang }}</option>
+          }
+        </select>
+      </div>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="filter().selectedOnly"
+          (change)="setFilter({ selectedOnly: checkedValue($event) })"
+        />
+        Selected only
+      </label>
+    </form>
+
+    <p class="muted small" aria-live="polite">
+      Showing {{ visible().length }} of {{ repos.value().length }} repositories ·
+      {{ selectedCount() }} selected
+    </p>
+
+    <ul class="list list-reset" aria-label="Repositories">
+      @for (repo of visible(); track repo.id) {
+        <li>
+          <app-repo-row
+            [repo]="repo"
+            [run]="tracker.stateFor(repo.id)"
+            [saving]="saving().has(repo.id)"
+            (selectedChange)="toggleSelected(repo, $event)"
+            (analyse)="analyse(repo)"
+          />
+        </li>
+      } @empty {
+        <li class="loading">No repositories match these filters.</li>
+      }
+    </ul>
+  }
+</div>

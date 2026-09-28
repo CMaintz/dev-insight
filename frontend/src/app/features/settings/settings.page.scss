@@ -1,0 +1,50 @@
+.narrow {
+  max-width: 48rem;
+}
+
+.identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  img {
+    border-radius: 50%;
+    border: 1px solid var(--border);
+  }
+
+  p {
+    margin: 0.125rem 0 0;
+  }
+}
+
+.form {
+  display: grid;
+  gap: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.publish {
+  align-items: flex-start;
+
+  input {
+    margin-top: 0.2rem;
+  }
+}
+
+.block {
+  display: block;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+section h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+}

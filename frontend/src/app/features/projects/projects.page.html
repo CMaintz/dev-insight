@@ -1,0 +1,76 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Projects</h1>
+      <p>Group repositories into showcase projects with screenshots for your portfolio.</p>
+    </div>
+    @if (!editing()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">New project</button>
+    }
+  </header>
+
+  @if (editing(); as e) {
+    <app-project-form
+      [project]="e.project"
+      [repositories]="repoList()"
+      [defaultSortOrder]="nextSort()"
+      [saving]="saving()"
+      (save)="save($event)"
+      (cancelled)="editing.set(null)"
+    />
+  }
+
+  @if (projects.status() === 'loading') {
+    <div class="skeleton" aria-busy="true" aria-label="Loading projects"></div>
+  } @else if (projects.error()) {
+    <app-empty-state icon="⚠" heading="Could not load projects" text="Try again in a moment.">
+      <button type="button" class="btn" (click)="projects.reload()">Retry</button>
+    </app-empty-state>
+  } @else {
+    <ul class="grid grid--cards list-reset" aria-label="Projects">
+      @for (project of sorted(); track project.id) {
+        <li class="card project">
+          @if (project.imageUrls[0]; as cover) {
+            <img class="project__cover" [src]="cover" alt="" loading="lazy" />
+          }
+          <div class="project__body">
+            <h2>{{ project.name }}</h2>
+            @if (project.description) {
+              <p class="muted small">{{ project.description }}</p>
+            }
+            @if (project.linkedRepositoryIds.length > 0) {
+              <ul class="tags list-reset" aria-label="Linked repositories">
+                @for (name of linkedNames(project); track $index) {
+                  <li class="chip">{{ name }}</li>
+                }
+              </ul>
+            }
+            <p class="small muted">
+              Position {{ project.sortOrder }} · {{ project.imageUrls.length }} image(s)
+            </p>
+          </div>
+          <div class="project__actions">
+            <button type="button" class="btn btn--sm" (click)="startEdit(project)">Edit</button>
+            <button type="button" class="btn btn--sm btn--danger" (click)="remove(project)">
+              {{ confirmingDelete() === project.id ? 'Confirm delete' : 'Delete' }}
+            </button>
+          </div>
+        </li>
+      } @empty {
+        @if (!editing()) {
+          <li class="empty-li">
+            <app-empty-state
+              icon="🗂"
+              heading="No projects yet"
+              text="Projects let you present related repositories together, with screenshots, on your public portfolio."
+            >
+              <button type="button" class="btn btn--primary" (click)="startCreate()">
+                Create your first project
+              </button>
+            </app-empty-state>
+          </li>
+        }
+      }
+    </ul>
+  }
+</div>

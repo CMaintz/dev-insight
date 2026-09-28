@@ -110,7 +110,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Product
 
-36b. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
+36½. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
     with "portfolio publish". Owners can preview their unpublished portfolio.
 37. 🧭 **Public portfolio shows strengths only**; improvement feedback stays on the private dashboard.
 38. 🧭 **Private repositories never appear on the public portfolio**, even when selected; project links to hidden
@@ -130,9 +130,12 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Security
 
-46. 🔒 **Session = JWT in an HttpOnly, SameSite=Strict cookie** (7 days); bearer tokens for scripts via
-    `POST /api/auth/token`. *Alt:* JWT in localStorage (XSS-exfiltratable). Logout clears the cookie; tokens are
-    not server-revocable (acceptable for this scope; add a denylist if needed).
+46. 🔒 **Session = bearer JWT (7 days) in the SPA's `localStorage`**, obtained by exchanging a single-use,
+    60-second sign-in code (`POST /api/auth/exchange`) that the OAuth callback appends to the SPA URL.
+    *Originally* an HttpOnly SameSite=Strict cookie — dropped when you chose GitHub Pages + a separately hosted
+    API, because cross-site cookies are blocked by browsers. *Trade-off:* a token in `localStorage` is readable by
+    an XSS; mitigated by a strict CSP (no inline scripts, `script-src 'self'`) on both hosts. Tokens are not
+    server-revocable (add a denylist if needed). CORS allows only the configured frontend origin.
 47. 🔒 **OAuth `state`** is random, stored encrypted (Data Protection, 10-min expiry) in a SameSite=Lax cookie and
     compared in constant time; `returnUrl` is restricted to local paths (open-redirect guard). Tested.
 48. 🔒 **GitHub tokens encrypted at rest** with ASP.NET Core Data Protection; the key ring is stored in PostgreSQL.
@@ -153,3 +156,30 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
     - the **Dockerfile and docker-compose.yml are unverified** — please run `docker compose up --build` once.
 54. ⚙️ **API integration tests use fakes for GitHub and git** (every OAuth code is a login; every user owns two
     repos) and the real database, auth, background worker and HTTP pipeline.
+
+## Hosting (after you chose "GitHub Pages + hosted backend", then Azure)
+
+55. 🧰 **API on Azure Container Apps (consumption, scale 0–1)**. *Alt:* App Service F1 (60 CPU-min/day is too
+    little for git clones), AKS (overkill), Cloudflare Workers / Supabase functions (no .NET, no git).
+    Max one replica because sign-in codes and the analysis queue are in memory.
+56. 🧰 **Image in GitHub Container Registry** (free, public package). *Alt:* Azure Container Registry (~USD 5/month).
+57. 🧰 **Infrastructure as Bicep** (`infra/main.bicep`), secrets passed as `@secure()` parameters from a local,
+    git-ignored `.env.azure`, stored as Container Apps secrets. Compiled in CI (`infra.yml`).
+58. 🔒 **GitHub Actions → Azure via OIDC federation**, scoped to the `production` environment and Contributor on
+    one resource group — no Azure secret in GitHub.
+59. 🧭 **Database is your choice at setup time**: Azure PostgreSQL Flexible Server B1ms (free 12 months, then
+    ~USD 13/month) or an external Supabase/Neon connection string.
+60. 🧭 **SPA reads the API URL at runtime** (`config.json`, written by the Pages workflow from the
+    `DEVINSIGHT_API_URL` repository variable) instead of baking it in at build time.
+61. ⚠️ **Scheduled re-analysis mostly won't fire** when the app scales to zero; history grows when the app is used.
+    Options if you want daily snapshots: `minReplicas: 1` (costs money) or an Azure Container Apps *job* on a cron.
+62. ⚠️ **Not verified end to end**: the Bicep template, workflows and cross-origin sign-in have been written,
+    compiled/type-checked and unit/integration-tested, but not run against real Azure/GitHub Pages — that happens
+    when you run `scripts/setup-azure.sh`. Your bio and LinkedIn URL (from cmaintz-site) go in via Settings then.
+
+## Frontend
+
+Every frontend decision (libraries, patterns, UX, charts, CSP and cross-origin auth handling, API assumptions)
+is in [`DECISIONS-frontend.md`](DECISIONS-frontend.md), written by the agent that built it. Highlights to review:
+score bands (≥75 Strong / ≥50 Fair), per-repo "Analyse" starts both scopes, ngx-charts with text summaries and
+data-table twins for every chart, token cleared on a 401 from the session probe.

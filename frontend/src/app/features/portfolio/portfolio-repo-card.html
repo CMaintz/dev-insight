@@ -1,0 +1,49 @@
+<article class="pcard">
+  <header class="pcard__head">
+    <h3>
+      <a [href]="repo().htmlUrl" target="_blank" rel="noopener noreferrer">
+        {{ repo().name }}<span class="visually-hidden"> (opens GitHub in a new tab)</span>
+      </a>
+    </h3>
+    <app-score-badge
+      [score]="repo().scores?.overall ?? null"
+      label="Overall score"
+      [showBand]="true"
+    />
+  </header>
+  @if (repo().description) {
+    <p class="pcard__desc">{{ repo().description }}</p>
+  }
+  @if (repo().scores; as s) {
+    <dl class="pcard__dims">
+      <div>
+        <dt>Activity</dt>
+        <dd><app-score-badge [score]="s.activity" label="Activity" /></dd>
+      </div>
+      <div>
+        <dt>Structure</dt>
+        <dd><app-score-badge [score]="s.structure" label="Structure" /></dd>
+      </div>
+      <div>
+        <dt>Quality</dt>
+        <dd><app-score-badge [score]="s.quality" label="Quality" /></dd>
+      </div>
+    </dl>
+  }
+  <ul class="pcard__meta list-reset" aria-label="Repository facts">
+    @for (lang of languages(); track lang) {
+      <li class="chip">{{ lang }}</li>
+    } @empty {
+      @if (repo().language) {
+        <li class="chip">{{ repo().language }}</li>
+      }
+    }
+    <li>
+      <span aria-hidden="true">★</span> {{ stars() }}<span class="visually-hidden"> stars</span>
+    </li>
+    <li>
+      <span aria-hidden="true">⑂</span> {{ forks() }}<span class="visually-hidden"> forks</span>
+    </li>
+    <li>Active {{ active() }}</li>
+  </ul>
+</article>

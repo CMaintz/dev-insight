@@ -1,0 +1,51 @@
+<a class="skip-link" href="#main" (click)="jumpTo($event, 'main')">Skip to content</a>
+<header class="header">
+  <div class="header__inner">
+    <a class="brand" routerLink="/" aria-label="DevInsight home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path d="M4 18V11M10 18V6M16 18v-9M22 18H2" />
+        </svg>
+      </span>
+      <span class="brand__name">DevInsight</span>
+    </a>
+
+    @if (session.isAuthenticated()) {
+      <nav class="nav" aria-label="Main">
+        @for (link of links; track link.path) {
+          <a
+            class="nav__link"
+            [routerLink]="link.path"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            >{{ link.label }}</a
+          >
+        }
+      </nav>
+    }
+
+    <div class="header__tools">
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="theme.toggle()"
+        [attr.aria-label]="
+          theme.effective() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+        "
+        [attr.title]="theme.effective() === 'dark' ? 'Light theme' : 'Dark theme'"
+      >
+        <span aria-hidden="true">{{ theme.effective() === 'dark' ? '☀' : '☾' }}</span>
+      </button>
+
+      @if (session.profile(); as profile) {
+        @if (profile.avatarUrl) {
+          <img class="avatar" [src]="profile.avatarUrl" alt="" width="32" height="32" />
+        }
+        <span class="visually-hidden">Signed in as {{ profile.login }}</span>
+        <button type="button" class="btn btn--sm btn--ghost" (click)="signOut()">Sign out</button>
+      } @else if (session.status() === 'anonymous') {
+        <button type="button" class="btn btn--sm btn--primary" (click)="signIn()">Sign in</button>
+      }
+    </div>
+  </div>
+</header>

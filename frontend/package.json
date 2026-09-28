@@ -1,0 +1,46 @@
+{
+  "name": "devinsight-frontend",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false && node --test scripts/*.test.mjs",
+    "test:watch": "ng test",
+    "lint": "ng lint --max-warnings=0 && prettier --check .",
+    "format": "prettier --write . && eslint --fix src",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
+    "build:pages": "ng build --configuration production,pages && node scripts/spa-fallback.mjs"
+  },
+  "private": true,
+  "packageManager": "npm@11.19.0",
+  "dependencies": {
+    "@angular/animations": "22.2.0",
+    "@angular/cdk": "22.2.0",
+    "@angular/common": "22.2.0",
+    "@angular/compiler": "22.2.0",
+    "@angular/core": "22.2.0",
+    "@angular/forms": "22.2.0",
+    "@angular/platform-browser": "22.2.0",
+    "@angular/platform-browser-dynamic": "22.2.0",
+    "@angular/router": "22.2.0",
+    "@swimlane/ngx-charts": "25.0.2",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.0",
+    "@angular/cli": "22.2.0",
+    "@angular/compiler-cli": "22.2.0",
+    "@eslint/js": "10.0.1",
+    "@vitest/coverage-v8": "5.0.2",
+    "angular-eslint": "22.5.0",
+    "eslint": "10.11.0",
+    "jsdom": "30.1.1",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "5.0.2"
+  }
+}
