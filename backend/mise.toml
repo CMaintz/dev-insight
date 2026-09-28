@@ -29,7 +29,7 @@ description = "All test projects + merged line-coverage floor (needs Docker or D
 # and the floor is checked here. Coverage counts DevInsight.* only; EF migrations are generated.
 run = '''
 set -eu
-floor=75
+floor=85
 rm -rf TestResults
 dotnet test --solution DevInsight.slnx --no-build --results-directory "$PWD/TestResults" \
   --coverlet --coverlet-output-format cobertura --coverlet-include "[DevInsight.*]*" \

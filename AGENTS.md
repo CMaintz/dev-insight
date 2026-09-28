@@ -9,7 +9,7 @@ DevInsight: .NET 10 API (`backend/`, hexagonal) + Angular 22 SPA (`frontend/`). 
 each package also has its own `mise run gate`). Work is done when it is green, not when it looks right.
 
 - The backend API tests need PostgreSQL: Docker (Testcontainers) or `DEVINSIGHT_TEST_POSTGRES` holding a
-  server connection string. Without either they skip, and the 75 % coverage floor then fails — a red `test`
+  server connection string. Without either they skip, and the 85 % coverage floor then fails — a red `test`
   for that reason means "provide a database", not "lower the floor".
 - `mise run fix` applies the mechanical fixes (formatting). Rule sets, thresholds and baselines change only in
   their own PR (CI's ruleset-guard enforces this).

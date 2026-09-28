@@ -200,7 +200,7 @@ data-table twins for every chart, token cleared on a 401 from the session probe.
 65. ⚙️ **Frontend verbs delegate to npm scripts** (`npm run lint` = `ng lint` + Prettier, `npm test` =
     `ng test` with coverage thresholds) rather than calling eslint/vitest directly as Foundry's TS template does —
     Angular's builders own those invocations.
-66. ⚙️ **Backend coverage floor = 75 % merged line coverage** of `DevInsight.*` (migrations excluded).
+66. ⚙️ **Backend coverage floor = 85 % merged line coverage** (measured 91.3 % with all tests; first set at 75 %) of `DevInsight.*` (migrations excluded).
     coverlet.MTP has no threshold option yet, so the `test` verb merges the Cobertura reports with ReportGenerator
     and checks the floor itself. Measured: 59.6 % *without* the PostgreSQL integration tests (API layer 0 %) —
     the floor assumes they run, which CI guarantees and local runs need Docker for.
