@@ -23,9 +23,7 @@
   @if (projects.status() === 'loading') {
     <div class="skeleton" aria-busy="true" aria-label="Loading projects"></div>
   } @else if (projects.error()) {
-    <app-empty-state icon="⚠" heading="Could not load projects" text="Try again in a moment.">
-      <button type="button" class="btn" (click)="projects.reload()">Retry</button>
-    </app-empty-state>
+    <app-load-error heading="Could not load projects" (retry)="projects.reload()" />
   } @else {
     <ul class="grid grid--cards list-reset" aria-label="Projects">
       @for (project of sorted(); track project.id) {

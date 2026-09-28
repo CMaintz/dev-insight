@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false && node --test scripts/*.test.mjs",
     "test:watch": "ng test",
-    "lint": "ng lint --max-warnings=0 && prettier --check .",
+    "lint": "ng lint --max-warnings=0 && prettier --check . && node scripts/check-function-length.mjs",
     "format": "prettier --write . && eslint --fix src",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "build:pages": "ng build --configuration production,pages && node scripts/spa-fallback.mjs"

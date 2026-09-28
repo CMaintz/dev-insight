@@ -3,11 +3,11 @@ import { firstValueFrom } from 'rxjs';
 import { RunTracker } from '../../core/analysis/run-tracker';
 import { WorkspaceActions } from '../../core/analysis/workspace-actions';
 import { ReposApi } from '../../core/api/repos.api';
-import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { Repository } from '../../core/models/api.models';
-import { EmptyState } from '../../shared/ui/empty-state';
+import { LoadError } from '../../shared/ui/load-error';
+import { ImportPrompt } from '../../shared/ui/import-prompt';
 import { WorkspaceActionsBar } from '../../shared/ui/workspace-actions-bar';
-import { reloadOn } from '../../shared/util/reload-on';
+import { listOrEmpty, reloadOn } from '../../shared/util/reload-on';
 import {
   EMPTY_FILTER,
   RepoFilter,
@@ -20,21 +20,20 @@ import { RepoRow } from './repo-row';
 @Component({
   selector: 'app-repositories-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [WorkspaceActionsBar, EmptyState, RepoRow],
+  imports: [LoadError, ImportPrompt, WorkspaceActionsBar, RepoRow],
   templateUrl: './repositories.page.html',
   styleUrl: './repositories.page.scss',
 })
 export class RepositoriesPage {
   private readonly api = inject(ReposApi);
   protected readonly tracker = inject(RunTracker);
-  private readonly errors = inject(UserActionErrors);
-  protected readonly actions = inject(WorkspaceActions);
+  private readonly actions = inject(WorkspaceActions);
 
   protected readonly repos = this.api.listResource();
   protected readonly filter = signal<RepoFilter>(EMPTY_FILTER);
   protected readonly saving = signal<ReadonlySet<string>>(new Set());
 
-  private readonly all = computed(() => (this.repos.hasValue() ? this.repos.value() : []));
+  private readonly all = listOrEmpty(this.repos);
   protected readonly languages = computed(() => distinctLanguages(this.all()));
   protected readonly visible = computed(() =>
     sortByActivity(filterRepositories(this.all(), this.filter())),
@@ -70,11 +69,7 @@ export class RepositoriesPage {
   }
 
   protected async analyse(repo: Repository): Promise<void> {
-    await this.tracker
-      .analyse(repo.id)
-      .catch((error: unknown) =>
-        this.errors.handle(error, 'That repository no longer exists — re-import from GitHub.'),
-      );
+    await this.actions.analyseRepository(repo.id);
   }
 
   private replace(updated: Repository): void {

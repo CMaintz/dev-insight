@@ -1,3 +1,5 @@
+@use 'mixins';
+
 .filters {
   display: grid;
   gap: 1rem;
@@ -12,9 +14,7 @@
 }
 
 .list {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  @include mixins.panel;
   overflow: hidden;
 
   > li + li {

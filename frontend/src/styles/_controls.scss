@@ -1,22 +1,13 @@
 /* Buttons, form controls, tables, chips and progress indicators. */
 
-// Buttons and text inputs share one raised, bordered surface so they line up in a row.
-@mixin control-surface($inline-padding) {
-  min-height: 2.5rem;
-  padding: 0.5rem $inline-padding;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  color: var(--text-primary);
-  font: inherit;
-}
+@use 'mixins';
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  @include control-surface(1rem);
+  @include mixins.control-surface(1rem);
   font-size: 0.9375rem;
   font-weight: 550;
   text-decoration: none;
@@ -92,7 +83,7 @@
 .select,
 .textarea {
   width: 100%;
-  @include control-surface(0.75rem);
+  @include mixins.control-surface(0.75rem);
 
   &[aria-invalid='true'] {
     border-color: var(--status-critical);
@@ -119,9 +110,7 @@
 
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  @include mixins.panel;
 }
 
 .data-table {
@@ -159,11 +148,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.0625rem 0.5rem;
-  border-radius: 999px;
-  background: var(--surface-sunken);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  @include mixins.pill;
   white-space: nowrap;
 }
 

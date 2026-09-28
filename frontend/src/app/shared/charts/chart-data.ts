@@ -5,7 +5,7 @@ import {
   ScorePoint,
   ScoreSnapshot,
 } from '../../core/models/api.models';
-import { formatDate, formatInteger, formatShare } from '../format/format';
+import { formatDate, formatInteger, formatShare, parseApiDate } from '../format/format';
 
 export interface ChartPoint {
   name: string | Date;
@@ -22,15 +22,11 @@ export interface TableData {
   rows: (string | number)[][];
 }
 
-function utcDate(value: string): Date {
-  return new Date(value.length === 10 ? `${value}T00:00:00Z` : value);
-}
-
 export function activitySeries(weeks: readonly ActivityWeek[]): ChartSeries[] {
   return [
     {
       name: 'Commits',
-      series: weeks.map((week) => ({ name: utcDate(week.weekStart), value: week.commits })),
+      series: weeks.map((week) => ({ name: parseApiDate(week.weekStart), value: week.commits })),
     },
   ];
 }
@@ -77,7 +73,7 @@ const SCORE_SERIES_IN_COLOUR_SLOT_ORDER = [
 export function scoreSeries(samples: readonly ScoreSample[]): ChartSeries[] {
   return SCORE_SERIES_IN_COLOUR_SLOT_ORDER.map(({ key, name }) => ({
     name,
-    series: samples.map((s) => ({ name: utcDate(s.date), value: s[key] })),
+    series: samples.map((s) => ({ name: parseApiDate(s.date), value: s[key] })),
   }));
 }
 

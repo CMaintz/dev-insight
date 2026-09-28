@@ -15,19 +15,12 @@
   @if (repos.status() === 'loading') {
     <div class="skeleton" aria-busy="true" aria-label="Loading repositories"></div>
   } @else if (repos.error()) {
-    <app-empty-state icon="⚠" heading="Could not load repositories" text="Try again in a moment.">
-      <button type="button" class="btn" (click)="repos.reload()">Retry</button>
-    </app-empty-state>
+    <app-load-error heading="Could not load repositories" (retry)="repos.reload()" />
   } @else if (repos.value().length === 0) {
-    <app-empty-state
-      icon="📦"
+    <app-import-prompt
       heading="No repositories imported"
       text="Import your public and private GitHub repositories. You choose which ones to analyse."
-    >
-      <button type="button" class="btn btn--primary" (click)="actions.importFromGitHub()">
-        Import from GitHub
-      </button>
-    </app-empty-state>
+    />
   } @else {
     <form class="filters card" role="search" (submit)="$event.preventDefault()">
       <div class="field">

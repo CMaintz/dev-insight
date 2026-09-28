@@ -243,3 +243,16 @@ data-table twins for every chart, token cleared on a 401 from the session probe.
     as the attacker). Low impact here (no payment or private data flows into the attacker's account). *Fix if
     needed:* issue a nonce with the login redirect, keep it in `sessionStorage`, and require it at `/exchange`.
 78. 🧰 **PostgreSQL ARM API `2025-08-01`** — the first stable version whose schema lists PostgreSQL 17.
+
+## Code-size audit (refactor/code-audit)
+
+79. ⚙️ **Function ≤ 18 code lines, file ≤ 300 lines — enforced, for production *and* test code.** Backend:
+    `CodeSizeTests` parses every `.cs` file with Roslyn (migrations exempt); frontend: `check-function-length.mjs`
+    in `npm run lint` (`describe` blocks exempt, `it` bodies measured). "Code line" = not blank, not a comment,
+    not only brackets/punctuation. *Alt:* ESLint `max-lines-per-function` alone — counts raw lines, and there is
+    no C# equivalent in the analyzers.
+80. 🏗 **Shared concepts extracted in the backend:** `CurrentUser` (bound into endpoint handlers instead of every
+    handler reading claims), `IUserOwned` + `OwnedBy(...)` (one ownership/404 rule for repositories, projects and
+    runs), `RepositoryInsights` (the latest-analyses + history loading the dashboard and portfolio shared), and the
+    analysers split into *facts* (measurements) and *metrics* (scoring).
+81. ⚙️ **Test names describe one behaviour**; tests that asserted two ("…and…", "…but…") were split.

@@ -6,6 +6,9 @@ import { UserActionErrors } from '../../core/http/surfaced-errors';
 import { Project, ProjectInput } from '../../core/models/api.models';
 import { ToastService } from '../../core/notifications/toast.service';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { BusyFlag } from '../../shared/util/busy-flag';
+import { listOrEmpty } from '../../shared/util/reload-on';
+import { LoadError } from '../../shared/ui/load-error';
 import { ProjectForm } from './project-form';
 import { nextSortOrder } from './project-form.model';
 
@@ -18,7 +21,7 @@ interface Editing {
 @Component({
   selector: 'app-projects-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EmptyState, ProjectForm],
+  imports: [LoadError, EmptyState, ProjectForm],
   templateUrl: './projects.page.html',
   styleUrl: './projects.page.scss',
 })
@@ -35,15 +38,17 @@ export class ProjectsPage {
     const editing = this.editing();
     return editing ? [{ key: editing.project?.id ?? 'new', project: editing.project }] : [];
   });
-  protected readonly saving = signal(false);
+  private readonly saveFlag = new BusyFlag();
+  protected readonly saving = this.saveFlag.active;
   protected readonly confirmingDelete = signal<string | null>(null);
 
   protected readonly sorted = computed(() =>
-    [...(this.projects.hasValue() ? this.projects.value() : [])].sort(
+    [...this.projectList()].sort(
       (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name),
     ),
   );
-  protected readonly repoList = computed(() => (this.repos.hasValue() ? this.repos.value() : []));
+  protected readonly repoList = listOrEmpty(this.repos);
+  private readonly projectList = listOrEmpty(this.projects);
   protected readonly repoNames = computed(
     () => new Map(this.repoList().map((repo) => [repo.id, repo.name])),
   );
@@ -62,12 +67,12 @@ export class ProjectsPage {
     if (!current) {
       return;
     }
-    this.saving.set(true);
-    const saved = await this.errors.resultOrNothing(
-      current.project ? this.api.update(current.project.id, body) : this.api.create(body),
-      PROJECT_GONE,
+    const saved = await this.saveFlag.run(() =>
+      this.errors.resultOrNothing(
+        current.project ? this.api.update(current.project.id, body) : this.api.create(body),
+        PROJECT_GONE,
+      ),
     );
-    this.saving.set(false);
     if (!saved) {
       return;
     }

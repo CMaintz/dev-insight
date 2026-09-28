@@ -88,18 +88,12 @@
       <a class="btn btn--primary" routerLink="/">What is DevInsight?</a>
     </app-empty-state>
   } @else if (portfolio.error()) {
-    <app-empty-state
-      icon="⚠"
+    <app-load-error
       heading="Could not load this portfolio"
       text="Please try again shortly."
-    >
-      <button type="button" class="btn" (click)="portfolio.reload()">Retry</button>
-    </app-empty-state>
+      (retry)="portfolio.reload()"
+    />
   } @else {
-    <div class="skeleton hero-skeleton" aria-busy="true" aria-label="Loading portfolio"></div>
-    <div class="grid grid--2">
-      <div class="skeleton tall"></div>
-      <div class="skeleton tall"></div>
-    </div>
+    <app-page-skeleton label="Loading portfolio" [hero]="true" />
   }
 </div>

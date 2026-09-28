@@ -7,6 +7,8 @@ import { Portfolio } from '../../core/models/api.models';
 import { ActivityChart, LanguagesChart, ScoreEvolutionChart } from '../../shared/charts/charts';
 import { formatCompact } from '../../shared/format/format';
 import { EmptyState } from '../../shared/ui/empty-state';
+import { LoadError } from '../../shared/ui/load-error';
+import { PageSkeleton } from '../../shared/ui/page-skeleton';
 import { KpiTile } from '../../shared/ui/kpi-tile';
 import { safeValue } from '../../shared/util/reload-on';
 import { PortfolioProjectCard, PortfolioRepoCard } from './portfolio-cards';
@@ -34,6 +36,8 @@ export function portfolioHighlights(p: Portfolio): PortfolioHighlights {
   selector: 'app-portfolio-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    LoadError,
+    PageSkeleton,
     RouterLink,
     ActivityChart,
     LanguagesChart,

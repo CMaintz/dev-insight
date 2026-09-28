@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileApi } from '../../core/api/profile.api';
@@ -7,6 +7,7 @@ import { SessionStore } from '../../core/auth/session.store';
 import { Profile, ProfileUpdate } from '../../core/models/api.models';
 import { ToastService } from '../../core/notifications/toast.service';
 import { linkedInUrlValidator } from '../../shared/forms/validators';
+import { BusyFlag } from '../../shared/util/busy-flag';
 
 export const BIO_MAX = 2000;
 
@@ -52,7 +53,8 @@ export class SettingsPage {
   protected readonly session = inject(SessionStore);
 
   protected readonly form = createProfileForm(this.session.profile());
-  protected readonly saving = signal(false);
+  private readonly saveFlag = new BusyFlag();
+  protected readonly saving = this.saveFlag.active;
   protected readonly bioMax = BIO_MAX;
   protected readonly portfolioPath = computed(() => this.session.profile()?.portfolioPath ?? null);
 
@@ -61,12 +63,12 @@ export class SettingsPage {
     if (this.form.invalid) {
       return;
     }
-    this.saving.set(true);
-    const profile = await this.errors.resultOrNothing(
-      this.api.update(toProfileUpdate(this.form.getRawValue())),
-      'Your account was not found — please sign in again.',
+    const profile = await this.saveFlag.run(() =>
+      this.errors.resultOrNothing(
+        this.api.update(toProfileUpdate(this.form.getRawValue())),
+        'Your account was not found — please sign in again.',
+      ),
     );
-    this.saving.set(false);
     if (profile) {
       this.session.setProfile(profile);
       this.form.markAsPristine();

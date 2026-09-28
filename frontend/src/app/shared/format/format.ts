@@ -29,11 +29,15 @@ export function formatShare(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
+export function parseApiDate(value: string): Date {
+  return new Date(value.length === 10 ? `${value}T00:00:00Z` : value);
+}
+
 export function formatDate(value: string | null | undefined): string {
   if (!value) {
     return '—';
   }
-  const date = new Date(value.length === 10 ? `${value}T00:00:00Z` : value);
+  const date = parseApiDate(value);
   return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date);
 }
 

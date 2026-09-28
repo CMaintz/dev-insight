@@ -1,16 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { SessionStore } from '../../core/auth/session.store';
 import { aProfile } from '../../../testing/fixtures';
-import { button, createPage, text } from '../../../testing/page-harness';
+import { button, createPage, text, typeInto } from '../../../testing/page-harness';
 import { SettingsPage, toProfileUpdate } from './settings.page';
-
-function type(element: HTMLElement, selector: string, value: string) {
-  const input = element.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
-  if (!input) throw new Error(`missing ${selector}`);
-  input.value = value;
-  input.dispatchEvent(new Event('input'));
-  input.dispatchEvent(new Event('blur'));
-}
 
 describe('SettingsPage', () => {
   it('prefills the form and links to the portfolio preview', async () => {
@@ -24,7 +16,7 @@ describe('SettingsPage', () => {
   it('rejects non-LinkedIn URLs', async () => {
     const { element, http, settle } = createPage(SettingsPage);
     await settle();
-    type(element, '#linkedin', 'https://example.com/me');
+    typeInto(element, '#linkedin', 'https://example.com/me');
     button(element, 'Save changes').click();
     await settle();
     expect(text(element)).toContain('Enter an https:// link on linkedin.com.');
@@ -34,8 +26,8 @@ describe('SettingsPage', () => {
   it('saves the profile and updates the session', async () => {
     const { element, http, settle } = createPage(SettingsPage);
     await settle();
-    type(element, '#bio', ' Builder of things ');
-    type(element, '#linkedin', 'https://www.linkedin.com/in/octocat');
+    typeInto(element, '#bio', ' Builder of things ');
+    typeInto(element, '#linkedin', 'https://www.linkedin.com/in/octocat');
     element.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click();
     button(element, 'Save changes').click();
     await settle();

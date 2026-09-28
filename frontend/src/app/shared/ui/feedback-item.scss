@@ -1,3 +1,5 @@
+@use 'mixins';
+
 :host {
   display: block;
 }
@@ -66,11 +68,7 @@
 }
 
 .tag {
-  padding: 0.0625rem 0.5rem;
-  border-radius: 999px;
-  background: var(--surface-sunken);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  @include mixins.pill;
 }
 
 .tag--ai {

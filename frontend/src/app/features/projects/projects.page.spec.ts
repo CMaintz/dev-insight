@@ -1,5 +1,5 @@
 import { aProject, aRepo } from '../../../testing/fixtures';
-import { button, createPage, text } from '../../../testing/page-harness';
+import { button, createPage, text, typeInto } from '../../../testing/page-harness';
 import { createProjectForm, nextSortOrder, toProjectInput } from './project-form.model';
 import { ProjectsPage } from './projects.page';
 
@@ -12,11 +12,25 @@ async function loaded(projects = [aProject()]) {
   return page;
 }
 
-function type(element: HTMLElement, selector: string, value: string) {
-  const input = element.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
-  if (!input) throw new Error(`missing ${selector}`);
-  input.value = value;
-  input.dispatchEvent(new Event('input'));
+type ProjectsHarness = Awaited<ReturnType<typeof loaded>>;
+
+async function openNewProjectForm(): Promise<ProjectsHarness> {
+  const page = await loaded([]);
+  await page.click('New project');
+  return page;
+}
+
+async function addImage(page: ProjectsHarness, url: string): Promise<void> {
+  await page.click('Add image URL');
+  typeInto(page.element, '#image-0', url);
+}
+
+async function editCard(page: ProjectsHarness, index: number): Promise<void> {
+  const editButtons = [
+    ...page.element.querySelectorAll<HTMLButtonElement>('.project__actions button'),
+  ].filter((b) => b.textContent?.trim() === 'Edit');
+  editButtons[index].click();
+  await page.settle();
 }
 
 describe('ProjectsPage', () => {
@@ -35,74 +49,60 @@ describe('ProjectsPage', () => {
     expect(text(element)).toContain('alpha');
   });
 
-  it('validates and creates a project', async () => {
-    const { element, http, settle } = await loaded([]);
-    expect(text(element)).toContain('No projects yet');
-    button(element, 'New project').click();
-    await settle();
+  it('requires a name and https image URLs before saving', async () => {
+    const page = await openNewProjectForm();
+    await page.click('Save project');
+    expect(text(page.element)).toContain('A name is required.');
 
-    button(element, 'Save project').click();
-    await settle();
-    expect(text(element)).toContain('A name is required.');
+    await addImage(page, 'http://insecure.example/a.png');
+    await page.click('Save project');
+    expect(text(page.element)).toContain('Enter a full https:// URL.');
+    page.http.expectNone('/api/projects');
+  });
 
-    type(element, '#project-name', '  Shiny thing ');
-    button(element, 'Add image URL').click();
-    await settle();
-    type(element, '#image-0', 'http://insecure.example/a.png');
-    button(element, 'Save project').click();
-    await settle();
-    expect(text(element)).toContain('Enter a full https:// URL.');
-    http.expectNone('/api/projects');
+  it('creates a project with a trimmed name, images and linked repositories', async () => {
+    const page = await openNewProjectForm();
+    typeInto(page.element, '#project-name', '  Shiny thing ');
+    await addImage(page, 'https://cdn.example/a.png');
+    page.element.querySelector<HTMLInputElement>('.repo-list input')?.click();
+    await page.click('Save project');
 
-    type(element, '#image-0', 'https://cdn.example/a.png');
-    element.querySelector<HTMLInputElement>('.repo-list input')?.click();
-    button(element, 'Save project').click();
-    await settle();
-
-    const post = http.expectOne({ method: 'POST', url: '/api/projects' });
-    expect(post.request.body).toEqual({
+    expect(page.http.expectOne({ method: 'POST', url: '/api/projects' }).request.body).toEqual({
       name: 'Shiny thing',
       description: null,
       imageUrls: ['https://cdn.example/a.png'],
       linkedRepositoryIds: ['r1'],
       sortOrder: 0,
     });
-    post.flush(aProject({ id: 'new', name: 'Shiny thing' }));
-    await settle();
-    expect(text(element)).toContain('Shiny thing');
-    expect(element.querySelector('app-project-form')).toBeNull();
+  });
+
+  it('closes the form and lists the project once it is created', async () => {
+    const page = await openNewProjectForm();
+    typeInto(page.element, '#project-name', 'Shiny thing');
+    await page.click('Save project');
+    await page.respond('/api/projects', aProject({ id: 'new', name: 'Shiny thing' }));
+    expect(text(page.element)).toContain('Shiny thing');
+    expect(page.element.querySelector('app-project-form')).toBeNull();
   });
 
   it('rebuilds the form when switching the edit target from one project to another', async () => {
     const projectA = aProject({ id: 'a', name: 'Alpha site', sortOrder: 0 });
     const projectB = aProject({ id: 'b', name: 'Beta app', description: 'B desc', sortOrder: 1 });
-    const { element, http, settle } = await loaded([projectA, projectB]);
+    const page = await loaded([projectA, projectB]);
 
-    const editButtons = () =>
-      [...element.querySelectorAll<HTMLButtonElement>('.project__actions button')].filter(
-        (b) => b.textContent?.trim() === 'Edit',
-      );
-    editButtons()[0].click();
-    await settle();
-    expect(element.querySelector<HTMLInputElement>('#project-name')?.value).toBe('Alpha site');
+    await editCard(page, 0);
+    expect(page.fieldValue('#project-name')).toBe('Alpha site');
+    await editCard(page, 1);
+    expect(page.fieldValue('#project-name')).toBe('Beta app');
+    expect(page.fieldValue('#project-description')).toBe('B desc');
 
-    editButtons()[1].click();
-    await settle();
-    expect(element.querySelector<HTMLInputElement>('#project-name')?.value).toBe('Beta app');
-    expect(element.querySelector<HTMLTextAreaElement>('#project-description')?.value).toBe(
-      'B desc',
-    );
-
-    button(element, 'Save project').click();
-    await settle();
-    const put = http.expectOne({ method: 'PUT', url: '/api/projects/b' });
+    await page.click('Save project');
+    const put = page.http.expectOne({ method: 'PUT', url: '/api/projects/b' });
     expect(put.request.body).toMatchObject({
       name: 'Beta app',
       description: 'B desc',
       sortOrder: 1,
     });
-    put.flush(projectB);
-    await settle();
   });
 
   it('disables deleting while a project is being edited', async () => {
@@ -116,8 +116,8 @@ describe('ProjectsPage', () => {
     const { element, http, settle } = await loaded([]);
     button(element, 'New project').click();
     await settle();
-    type(element, '#project-name', '   ');
-    type(element, '#project-description', 'x'.repeat(4001));
+    typeInto(element, '#project-name', '   ');
+    typeInto(element, '#project-description', 'x'.repeat(4001));
     button(element, 'Save project').click();
     await settle();
 

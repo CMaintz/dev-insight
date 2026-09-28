@@ -30,15 +30,10 @@
     }
 
     @if (d.repositoryCount === 0) {
-      <app-empty-state
-        icon="📦"
+      <app-import-prompt
         heading="No repositories yet"
         text="Import your GitHub repositories to start. Nothing is analysed until you select and analyse them."
-      >
-        <button type="button" class="btn btn--primary" (click)="actions.importFromGitHub()">
-          Import from GitHub
-        </button>
-      </app-empty-state>
+      />
     } @else {
       <section class="card scores" aria-labelledby="scores-title">
         <h2 id="scores-title" class="visually-hidden">Average scores</h2>
@@ -101,18 +96,12 @@
       </section>
     }
   } @else if (dashboard.isLoading()) {
-    <div class="skeleton" aria-busy="true" aria-label="Loading dashboard"></div>
-    <div class="grid grid--2">
-      <div class="skeleton tall"></div>
-      <div class="skeleton tall"></div>
-    </div>
+    <app-page-skeleton label="Loading dashboard" />
   } @else if (dashboard.error()) {
-    <app-empty-state
-      icon="⚠"
+    <app-load-error
       heading="Could not load the dashboard"
       text="Check that the API is running, then try again."
-    >
-      <button type="button" class="btn" (click)="dashboard.reload()">Retry</button>
-    </app-empty-state>
+      (retry)="dashboard.reload()"
+    />
   }
 </div>

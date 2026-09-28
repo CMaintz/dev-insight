@@ -1,5 +1,7 @@
 /* Page-level layout primitives shared by every feature. */
 
+@use 'mixins';
+
 .page {
   width: 100%;
   max-width: var(--content-width);
@@ -43,9 +45,7 @@
 .card {
   min-width: 0;
   padding: 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  @include mixins.panel;
 }
 
 .card > h2,

@@ -36,7 +36,7 @@ module.exports = defineConfig([
         { accessibility: 'no-public', overrides: { constructors: 'off' } },
       ],
       'max-lines': ['error', { max: 300, skipBlankLines: false, skipComments: false }],
-      'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 25, skipBlankLines: true, skipComments: true }],
       eqeqeq: ['error', 'always'],
       'no-console': ['error', { allow: ['error'] }],
     },

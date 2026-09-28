@@ -1,12 +1,18 @@
 import {
+  ActivityWeek,
   Analysis,
   AnalysisRun,
   Dashboard,
   Feedback,
+  Metric,
   Portfolio,
+  PortfolioOwner,
+  PortfolioProject,
+  PortfolioRepository,
   Profile,
   Project,
   Repository,
+  Scores,
 } from '../app/core/models/api.models';
 
 export function aProfile(overrides: Partial<Profile> = {}): Profile {
@@ -73,6 +79,26 @@ export function aFeedback(overrides: Partial<Feedback> = {}): Feedback {
   };
 }
 
+function aMetric(overrides: Partial<Metric> = {}): Metric {
+  return {
+    name: 'total_commits',
+    category: 'activity',
+    value: 120,
+    includedInScore: true,
+    points: 90,
+    weight: 0.5,
+    ...overrides,
+  };
+}
+
+function anInformationalMetric(overrides: Partial<Metric> = {}): Metric {
+  return aMetric({ includedInScore: false, points: null, weight: null, ...overrides });
+}
+
+function aWeek(overrides: Partial<ActivityWeek> = {}): ActivityWeek {
+  return { weekStart: '2026-09-07', commits: 4, additions: 10, deletions: 2, ...overrides };
+}
+
 export function anAnalysis(overrides: Partial<Analysis> = {}): Analysis {
   return {
     id: 'a1',
@@ -83,24 +109,10 @@ export function anAnalysis(overrides: Partial<Analysis> = {}): Analysis {
     overallScore: 72,
     scores: { activity: 80, structure: 60, quality: 75 },
     metrics: [
-      {
-        name: 'total_commits',
-        category: 'activity',
-        value: 120,
-        includedInScore: true,
-        points: 90,
-        weight: 0.5,
-      },
-      {
-        name: 'contributor_count',
-        category: 'quality',
-        value: 2,
-        includedInScore: false,
-        points: null,
-        weight: null,
-      },
+      aMetric(),
+      anInformationalMetric({ name: 'contributor_count', category: 'quality', value: 2 }),
     ],
-    timeline: [{ weekStart: '2026-09-07', commits: 4, additions: 10, deletions: 2 }],
+    timeline: [aWeek()],
     largestFiles: [{ path: 'src/big.ts', lines: 812 }],
     feedback: [aFeedback(), aFeedback({ id: 'f2', isStrength: true, title: 'Has tests' })],
     ...overrides,
@@ -136,46 +148,59 @@ export function aProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
+const PORTFOLIO_SCORES: Scores = { overall: 81, activity: 70, structure: 85, quality: 88 };
+
+function aPortfolioOwner(overrides: Partial<PortfolioOwner> = {}): PortfolioOwner {
+  return {
+    login: 'octocat',
+    name: 'The Octocat',
+    avatarUrl: null,
+    bio: 'I write code.',
+    linkedInUrl: 'https://www.linkedin.com/in/octocat',
+    gitHubUrl: 'https://github.com/octocat',
+    isPublic: true,
+    ...overrides,
+  };
+}
+
+function aPortfolioRepository(overrides: Partial<PortfolioRepository> = {}): PortfolioRepository {
+  return {
+    id: 'r1',
+    name: 'alpha',
+    description: 'First repo',
+    htmlUrl: 'https://github.com/octocat/alpha',
+    language: 'TypeScript',
+    stars: 12,
+    forks: 2,
+    lastActivity: '2026-09-01T00:00:00+00:00',
+    languages: { TypeScript: 800, HTML: 200 },
+    scores: PORTFOLIO_SCORES,
+    ...overrides,
+  };
+}
+
+function aPortfolioProject(overrides: Partial<PortfolioProject> = {}): PortfolioProject {
+  return {
+    id: 'p1',
+    name: 'Showcase',
+    description: 'A project',
+    imageUrls: ['https://example.com/1.png', 'https://example.com/2.png'],
+    linkedRepositoryIds: ['r1'],
+    ...overrides,
+  };
+}
+
 export function aPortfolio(overrides: Partial<Portfolio> = {}): Portfolio {
   return {
-    owner: {
-      login: 'octocat',
-      name: 'The Octocat',
-      avatarUrl: null,
-      bio: 'I write code.',
-      linkedInUrl: 'https://www.linkedin.com/in/octocat',
-      gitHubUrl: 'https://github.com/octocat',
-      isPublic: true,
-    },
+    owner: aPortfolioOwner(),
     scope: 'userContribution',
-    scores: { overall: 81, activity: 70, structure: 85, quality: 88 },
-    repositories: [
-      {
-        id: 'r1',
-        name: 'alpha',
-        description: 'First repo',
-        htmlUrl: 'https://github.com/octocat/alpha',
-        language: 'TypeScript',
-        stars: 12,
-        forks: 2,
-        lastActivity: '2026-09-01T00:00:00+00:00',
-        languages: { TypeScript: 800, HTML: 200 },
-        scores: { overall: 81, activity: 70, structure: 85, quality: 88 },
-      },
-    ],
-    projects: [
-      {
-        id: 'p1',
-        name: 'Showcase',
-        description: 'A project',
-        imageUrls: ['https://example.com/1.png', 'https://example.com/2.png'],
-        linkedRepositoryIds: ['r1'],
-      },
-    ],
+    scores: PORTFOLIO_SCORES,
+    repositories: [aPortfolioRepository()],
+    projects: [aPortfolioProject()],
     languages: [{ language: 'TypeScript', bytes: 800, share: 0.8 }],
     activity: [
-      { weekStart: '2026-09-07', commits: 3, additions: 1, deletions: 1 },
-      { weekStart: '2026-09-14', commits: 0, additions: 0, deletions: 0 },
+      aWeek({ commits: 3, additions: 1, deletions: 1 }),
+      aWeek({ weekStart: '2026-09-14', commits: 0, additions: 0, deletions: 0 }),
     ],
     scoreEvolution: [],
     strengths: [{ repositoryId: 'r1', repositoryName: 'alpha', title: 'Tested', message: 'Good.' }],

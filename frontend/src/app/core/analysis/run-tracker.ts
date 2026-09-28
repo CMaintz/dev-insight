@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Observer, Subscription, firstValueFrom } from 'rxjs';
 import { AnalysisApi } from '../api/analysis.api';
 import { AnalysisRun, ScopeParam } from '../models/api.models';
 import { ToastService } from '../notifications/toast.service';
@@ -135,25 +135,27 @@ export class RunTracker {
     if (isTerminal(run.status)) {
       return;
     }
+    const subscription = this.poller.poll(run.id).subscribe(this.observeUntilSettled(run));
+    if (!subscription.closed) {
+      this.polls.set(run.id, subscription);
+    }
+  }
+
+  private observeUntilSettled(run: AnalysisRun): Partial<Observer<AnalysisRun>> {
     let latest = run;
-    const subscription = this.poller.poll(run.id).subscribe({
+    const stopTracking = () => {
+      this.polls.delete(run.id);
+      if (!isTerminal(latest.status)) {
+        this.markLostTrack(latest);
+      }
+    };
+    return {
       next: (update) => {
         latest = update;
         this.upsert(update);
       },
-      error: () => {
-        this.polls.delete(run.id);
-        this.markLostTrack(latest);
-      },
-      complete: () => {
-        this.polls.delete(run.id);
-        if (!isTerminal(latest.status)) {
-          this.markLostTrack(latest);
-        }
-      },
-    });
-    if (!subscription.closed) {
-      this.polls.set(run.id, subscription);
-    }
+      error: stopTracking,
+      complete: stopTracking,
+    };
   }
 }

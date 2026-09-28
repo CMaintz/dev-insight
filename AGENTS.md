@@ -14,6 +14,14 @@ each package also has its own `mise run gate`). Work is done when it is green, n
 - `mise run fix` applies the mechanical fixes (formatting). Rule sets, thresholds and baselines change only in
   their own PR (CI's ruleset-guard enforces this).
 
+## Size and shape (enforced by the gate)
+
+- A function does **one thing**: at most **18 lines of actual code** (blank, comment and brace-only lines don't
+  count), fewer is better. If its name wants an "and", it is two functions. Same for test names — one behaviour each.
+- No code file over **300 lines**.
+- Repeated logic goes into a named shared helper; repeated markup into a component or SCSS mixin.
+- Enforced by `CodeSizeTests` (backend, Roslyn) and `scripts/check-function-length.mjs` (frontend, in `lint`).
+
 ## Invariants the code relies on
 
 - **Dependencies point inward.** `Domain` references nothing; `Application` knows no adapter technology.

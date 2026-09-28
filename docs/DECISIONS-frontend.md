@@ -8,9 +8,9 @@ Each bullet: the choice → the alternative rejected, and why.
 - **All versions pinned exactly** (a script rewrote every `^`/`~` from `node_modules`, including the ones `ng new` and `ng add angular-eslint` added). Rejected ranges because the task requires reproducible pins. The lockfile is committed as-is.
 - **`@swimlane/ngx-charts` 25.0.2** (the spec asked for it) with its peers `@angular/animations`, `@angular/cdk` and `@angular/platform-browser-dynamic`, all 22.2.0. There is no other UI kit: rejected Angular Material because the brief says "prefer CDK only". CDK is installed only as an ngx-charts peer.
 - **`provideAnimationsAsync()`** in app config. ngx-charts still uses `@angular/animations`, and the async provider keeps the engine out of the initial bundle. Rejected `provideNoopAnimations` because it kills chart transitions for everyone. Motion is disabled per chart when `prefers-reduced-motion` is set.
-- **angular-eslint 22.5.0 flat config**, added by `ng add` and extended with: OnPush required, `prefer-inject`, `prefer-signals`, `max-lines: 300` (mirrors the Foundry structural-smell gate), `max-lines-per-function: 60` (off in specs), `eqeqeq`, `no-console` (except `console.error` in `main.ts`), template control-flow and self-closing rules, and a11y template rules. Rejected the bare recommended set because it enforces none of the task's conventions.
+- **angular-eslint 22.5.0 flat config**, added by `ng add` and extended with: OnPush required, `prefer-inject`, `prefer-signals`, `max-lines: 300` (mirrors the Foundry structural-smell gate), `max-lines-per-function: 25` (off in specs; see the function-size section), `eqeqeq`, `no-console` (except `console.error` in `main.ts`), template control-flow and self-closing rules, and a11y template rules. Rejected the bare recommended set because it enforces none of the task's conventions.
 - **`npm run lint` = `ng lint --max-warnings=0 && prettier --check .`**, which makes warnings fail the gate. Prettier has `endOfLine: lf`, and `.prettierignore` covers dist, coverage and the lockfile.
-- **Coverage thresholds: statements 90 / branches 80 / functions 85 / lines 90**, set in `angular.json` `test.options` so `npm test` is just `ng test --watch=false`. The measured result is 95.4 / 89.6 / 93.5 / 96.7. Rejected the suggested 70% because the suite comfortably meets a stricter bar. `src/testing/**` (fixtures/harness) and `main.ts` are excluded, but no app source is.
+- **Coverage thresholds: statements 90 / branches 80 / functions 85 / lines 90**, set in `angular.json` `test.options` so `npm test` is just `ng test --watch=false`. The measured result is 95.9 / 90.1 / 94.1 / 97.1. Rejected the suggested 70% because the suite comfortably meets a stricter bar. `src/testing/**` (fixtures/harness) and `main.ts` are excluded, but no app source is.
 - **Budgets left at CLI defaults** (initial 500 kB warn, component style 4 kB warn). Every route is lazy and ngx-charts/d3 only load with chart pages. The initial bundle is 335 kB raw / 94 kB transfer.
 
 ## CSP compliance (coordinator requirement)
@@ -130,6 +130,39 @@ Each bullet: the choice → the alternative rejected, and why.
 - **No comments in production `.ts`.** The sensor flags every comment regardless of intent. Explanations were moved into names (`CVD_VALIDATED_PALETTE`, `SCORE_SERIES_IN_COLOUR_SLOT_ORDER`, `dropTokenIfRejected`, `UserActionErrors`) or already live in this log (CSP, base-href fragment links, interceptor order, palette validation numbers).
   - The comments in `app.config.ts` (config before the first request, interceptor order, async animations) were not flagged by the sensor and are kept, because they explain a _why_.
   - SCSS/HTML files are outside the sensor's scope and keep their short why-comments.
+
+## Function size and duplication (owner standard: ≤ 18 code lines per function, ≤ 300 lines per file)
+
+- **`scripts/check-function-length.mjs` enforces the limits and runs as part of `npm run lint`** (and so `mise run lint` / `gate`). It is covered by a `node --test` suite that runs in `npm test`.
+  - It uses ts-morph over `src/**/*.ts` and `scripts/*.mjs`.
+  - A "code line" is non-blank, not a comment, and not bracket/punctuation-only.
+  - `describe()` callbacks are skipped because they are containers; `it()` bodies are measured.
+  - Nested functions count toward their parent too, which errs on the strict side.
+  - Rejected relying on ESLint alone: `max-lines-per-function` counts signature and brace lines and can't skip `describe`.
+- **ESLint `max-lines-per-function` is tightened from 60 to 25** raw lines (blank and comment lines skipped) for production code. That is roughly 18 code lines plus signature and closing lines, and gives editor feedback; the script is the authoritative check.
+- **Test code follows the same limit through named steps rather than split lines:**
+  - Fixtures are composed of smaller builders (`aMetric`, `anInformationalMetric`, `aWeek`, `aPortfolioOwner`/`Repository`/`Project`).
+  - The page harness gained `openPage(component, plannedResponses)`, `respond()`, `click()`, `fieldValue()`, `typeInto()`, `requireElement()` and `NOT_FOUND`.
+  - `answerRunStarts()` answers the two per-scope analysis POSTs.
+  - Specs define page-level steps (`openDashboard`, `openDetail`, `openNewProjectForm`, `addImage`, `editCard`, `search`, `chooseLanguage`).
+  - Multi-behaviour tests were split into one behaviour each.
+- **The first-run guide is data-driven:** a `GUIDE_STEPS` table of definitions, each with an `isDone(progress)` predicate, is mapped into view steps. Previously this was one long literal function.
+- **Named UI pieces replace repeated markup:**
+  - `ImportPrompt` — the "no repositories" empty state with the Import button, on the dashboard and repositories pages.
+  - `LoadError` — "Could not load …" + Retry, on the dashboard, repositories, projects and portfolio.
+  - `PageSkeleton` — the loading layout on the dashboard and portfolio.
+- **SCSS mixins in `src/styles/_mixins.scss`**, reachable as `@use 'mixins'` via `stylePreprocessorOptions.includePaths`:
+  - `panel` — bordered surface card, used by `.card`, `.table-wrap`, portfolio cards and strengths, the repositories list.
+  - `pill` — used by `.chip` and feedback tags.
+  - `control-surface` — buttons and inputs.
+  - Judged coincidental and left alone: `kpi-tile` and `empty-state` (different padding / a dashed border) and `chart-frame` (not a panel).
+- **Repeated production logic extracted:**
+  - `BusyFlag` — "run once at a time while flagged busy", used by import, analyse-all, and the project and profile saves. It also resets on a thrown error; before, a rethrown 401 could leave the flag stuck on.
+  - `WorkspaceActions.analyseRepository()` — one place for "analyse this repo and explain a 404", used by the repositories and detail pages.
+  - `listOrEmpty(resource)` — array resources read as `[]` until loaded or on error.
+  - `parseApiDate()` — shared by date formatting and the chart mappers.
+  - `RunTracker.observeUntilSettled()` — the poll observer, extracted from `track()`.
+- **Deliberately left:** the remaining `hasValue() ? value() : undefined` inside `safeValue`/`stickyValue`, since they are the helpers themselves.
 
 ## Testing
 

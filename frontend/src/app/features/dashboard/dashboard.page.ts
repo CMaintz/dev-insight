@@ -13,7 +13,9 @@ import {
   ScoreEvolutionChart,
 } from '../../shared/charts/charts';
 import { formatShare } from '../../shared/format/format';
-import { EmptyState } from '../../shared/ui/empty-state';
+import { LoadError } from '../../shared/ui/load-error';
+import { PageSkeleton } from '../../shared/ui/page-skeleton';
+import { ImportPrompt } from '../../shared/ui/import-prompt';
 import { WorkspaceActionsBar } from '../../shared/ui/workspace-actions-bar';
 import { FeedbackItem } from '../../shared/ui/feedback-item';
 import { KpiTile } from '../../shared/ui/kpi-tile';
@@ -27,13 +29,16 @@ import { RepoScoreTable } from './repo-score-table';
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    LoadError,
+    PageSkeleton,
+    ImportPrompt,
     WorkspaceActionsBar,
     RouterLink,
     ActivityChart,
     CommitSizeChart,
     LanguagesChart,
     ScoreEvolutionChart,
-    EmptyState,
+
     FeedbackItem,
     KpiTile,
     ScopeToggle,

@@ -26,3 +26,7 @@ export function stickyValue<T>(resource: Resource<T | undefined>): Signal<T | un
 export function safeValue<T>(resource: Resource<T>): Signal<T | undefined> {
   return computed(() => (resource.hasValue() ? resource.value() : undefined));
 }
+
+export function listOrEmpty<T>(resource: Resource<T[] | undefined>): Signal<T[]> {
+  return computed(() => (resource.hasValue() ? (resource.value() ?? []) : []));
+}

@@ -1,8 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { BusyFlag } from '../../shared/util/busy-flag';
 import { ReposApi } from '../api/repos.api';
 import { UserActionErrors } from '../http/surfaced-errors';
 import { ToastService } from '../notifications/toast.service';
 import { RunTracker } from './run-tracker';
+
+const REPOSITORY_GONE = 'That repository no longer exists — re-import from GitHub.';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceActions {
@@ -11,20 +14,20 @@ export class WorkspaceActions {
   private readonly toasts = inject(ToastService);
   private readonly errors = inject(UserActionErrors);
 
-  readonly importing = signal(false);
-  readonly startingAnalysis = signal(false);
+  private readonly importFlag = new BusyFlag();
+  private readonly analyseAllFlag = new BusyFlag();
+
+  readonly importing = this.importFlag.active;
+  readonly startingAnalysis = this.analyseAllFlag.active;
   readonly importVersion = signal(0);
 
   async importFromGitHub(): Promise<void> {
-    if (this.importing()) {
-      return;
-    }
-    this.importing.set(true);
-    const result = await this.errors.resultOrNothing(
-      this.repos.importFromGitHub(),
-      'The import endpoint was not found — is the API up to date?',
+    const result = await this.importFlag.run(() =>
+      this.errors.resultOrNothing(
+        this.repos.importFromGitHub(),
+        'The import endpoint was not found — is the API up to date?',
+      ),
     );
-    this.importing.set(false);
     if (result) {
       this.toasts.success(
         'Repositories imported',
@@ -34,17 +37,17 @@ export class WorkspaceActions {
     }
   }
 
+  async analyseRepository(repositoryId: string): Promise<void> {
+    await this.tracker.analyse(repositoryId).catch(this.handleMissingRepository);
+  }
+
+  private readonly handleMissingRepository = (error: unknown): undefined =>
+    this.errors.handle(error, REPOSITORY_GONE);
+
   async analyseAllSelected(): Promise<void> {
-    if (this.startingAnalysis()) {
-      return;
-    }
-    this.startingAnalysis.set(true);
-    const queued = await this.tracker
-      .analyseAll()
-      .catch((error: unknown) =>
-        this.errors.handle(error, 'That repository no longer exists — re-import from GitHub.'),
-      );
-    this.startingAnalysis.set(false);
+    const queued = await this.analyseAllFlag.run(() =>
+      this.tracker.analyseAll().catch(this.handleMissingRepository),
+    );
     if (queued === undefined) {
       return;
     }

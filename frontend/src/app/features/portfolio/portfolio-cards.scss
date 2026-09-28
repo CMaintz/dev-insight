@@ -1,3 +1,5 @@
+@use 'mixins';
+
 :host {
   display: block;
   height: 100%;
@@ -9,9 +11,7 @@
   gap: 0.75rem;
   height: 100%;
   padding: 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  @include mixins.panel;
   transition:
     transform 150ms ease,
     box-shadow 150ms ease;

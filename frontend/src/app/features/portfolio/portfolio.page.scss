@@ -1,3 +1,5 @@
+@use 'mixins';
+
 .portfolio {
   gap: 2rem;
 }
@@ -24,9 +26,7 @@
   display: flex;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  @include mixins.panel;
 
   p {
     margin: 0.25rem 0 0.5rem;
@@ -49,12 +49,4 @@
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   text-align: center;
-}
-
-.hero-skeleton {
-  min-height: 14rem;
-}
-
-.skeleton.tall {
-  min-height: 16rem;
 }

@@ -15,39 +15,45 @@ interface GuideStep {
   done: boolean;
 }
 
-function guideSteps(p: FirstRunProgress): GuideStep[] {
-  return [
-    {
-      key: 'import',
-      title: 'Import',
-      text: 'Pull your repositories from GitHub.',
-      done: p.repositoryCount > 0,
-    },
-    {
-      key: 'select',
-      title: 'Select',
-      text: 'Choose the repositories that represent you.',
-      done: p.selectedCount > 0,
-    },
-    {
-      key: 'analyse',
-      title: 'Analyse',
-      text: 'Compute scores for your selection.',
-      done: p.analyzedCount > 0,
-    },
-    {
-      key: 'view',
-      title: 'View',
-      text: 'Explore scores, metrics and feedback.',
-      done: p.analyzedCount > 0,
-    },
-    {
-      key: 'publish',
-      title: 'Publish',
-      text: 'Make your portfolio public.',
-      done: p.isPortfolioPublic,
-    },
-  ];
+interface GuideStepDefinition extends Omit<GuideStep, 'done'> {
+  isDone(progress: FirstRunProgress): boolean;
+}
+
+const GUIDE_STEPS: readonly GuideStepDefinition[] = [
+  {
+    key: 'import',
+    title: 'Import',
+    text: 'Pull your repositories from GitHub.',
+    isDone: (p) => p.repositoryCount > 0,
+  },
+  {
+    key: 'select',
+    title: 'Select',
+    text: 'Choose the repositories that represent you.',
+    isDone: (p) => p.selectedCount > 0,
+  },
+  {
+    key: 'analyse',
+    title: 'Analyse',
+    text: 'Compute scores for your selection.',
+    isDone: (p) => p.analyzedCount > 0,
+  },
+  {
+    key: 'view',
+    title: 'View',
+    text: 'Explore scores, metrics and feedback.',
+    isDone: (p) => p.analyzedCount > 0,
+  },
+  {
+    key: 'publish',
+    title: 'Publish',
+    text: 'Make your portfolio public.',
+    isDone: (p) => p.isPortfolioPublic,
+  },
+];
+
+function guideSteps(progress: FirstRunProgress): GuideStep[] {
+  return GUIDE_STEPS.map(({ isDone, ...step }) => ({ ...step, done: isDone(progress) }));
 }
 
 @Component({

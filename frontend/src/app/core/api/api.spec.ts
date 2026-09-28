@@ -1,8 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { aDashboard, aPortfolio, aProfile, aProject, aRepo, aRun } from '../../../testing/fixtures';
 import { ScopeParam } from '../models/api.models';
 import { AnalysisApi } from './analysis.api';
@@ -128,32 +132,50 @@ describe('API clients', () => {
     expect(res.value()?.repositoryCount).toBe(2);
   });
 
-  it('ProjectsApi supports CRUD', async () => {
+  const PROJECT_BODY = {
+    name: 'x',
+    description: null,
+    imageUrls: [],
+    linkedRepositoryIds: [],
+    sortOrder: 0,
+  };
+
+  function answer<T>(
+    request: Observable<T>,
+    match: { method: string; url: string },
+    body: Parameters<TestRequest['flush']>[0],
+    options?: Parameters<TestRequest['flush']>[1],
+  ): Promise<T> {
+    const result = firstValueFrom(request);
+    http.expectOne(match).flush(body, options);
+    return result;
+  }
+
+  it('ProjectsApi creates a project', async () => {
     const api = TestBed.inject(ProjectsApi);
-    const body = {
-      name: 'x',
-      description: null,
-      imageUrls: [],
-      linkedRepositoryIds: [],
-      sortOrder: 0,
-    };
-    const created = firstValueFrom(api.create(body));
-    http
-      .expectOne({ method: 'POST', url: '/api/projects' })
-      .flush(aProject(), { status: 201, statusText: 'Created' });
-    expect((await created).id).toBe('p1');
+    const created = await answer(
+      api.create(PROJECT_BODY),
+      { method: 'POST', url: '/api/projects' },
+      aProject(),
+      { status: 201, statusText: 'Created' },
+    );
+    expect(created.id).toBe('p1');
+  });
 
-    const updated = firstValueFrom(api.update('p1', body));
-    http.expectOne({ method: 'PUT', url: '/api/projects/p1' }).flush(aProject());
-    await updated;
+  it('ProjectsApi updates a project', async () => {
+    const api = TestBed.inject(ProjectsApi);
+    const put = { method: 'PUT', url: '/api/projects/p1' };
+    expect((await answer(api.update('p1', PROJECT_BODY), put, aProject())).id).toBe('p1');
+  });
 
-    const deleted = firstValueFrom(api.delete('p1'));
-    http
-      .expectOne({ method: 'DELETE', url: '/api/projects/p1' })
-      .flush(null, { status: 204, statusText: 'No Content' });
-    await deleted;
+  it('ProjectsApi deletes a project', async () => {
+    const api = TestBed.inject(ProjectsApi);
+    const del = { method: 'DELETE', url: '/api/projects/p1' };
+    await answer(api.delete('p1'), del, null, { status: 204, statusText: 'No Content' });
+  });
 
-    const list = TestBed.runInInjectionContext(() => api.listResource());
+  it('ProjectsApi lists projects as a resource', async () => {
+    const list = TestBed.runInInjectionContext(() => TestBed.inject(ProjectsApi).listResource());
     TestBed.tick();
     http.expectOne('/api/projects').flush([aProject()]);
     await TestBed.inject(ApplicationRef).whenStable();
