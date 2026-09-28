@@ -110,7 +110,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Product
 
-36½. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
+37. 🧭 **Portfolio is private until published** (`isPortfolioPublic`, default false) — the spec's UX flow ends
     with "portfolio publish". Owners can preview their unpublished portfolio.
 37. 🧭 **Public portfolio shows strengths only**; improvement feedback stays on the private dashboard.
 38. 🧭 **Private repositories never appear on the public portfolio**, even when selected; project links to hidden
@@ -139,6 +139,8 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 47. 🔒 **OAuth `state`** is random, stored encrypted (Data Protection, 10-min expiry) in a SameSite=Lax cookie and
     compared in constant time; `returnUrl` is restricted to local paths (open-redirect guard). Tested.
 48. 🔒 **GitHub tokens encrypted at rest** with ASP.NET Core Data Protection; the key ring is stored in PostgreSQL.
+    ⚠️ *Trade-off:* the key ring itself is **not** encrypted and sits in the same database as the tokens, so a full
+    database leak exposes both. Upgrade path: `ProtectKeysWithAzureKeyVault` (Key Vault + managed identity).
 49. 🔒 **Other users' resources return 404, never 403** (no ID probing). Tested.
 50. 🔒 **Rate limits**: 30 analysis requests / 5 imports per user per minute.
 51. 🔒 **Security headers + CSP** (`script-src 'self'`; Google Fonts allowed for styles/fonts; `/scalar` exempt

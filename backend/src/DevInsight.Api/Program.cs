@@ -1,9 +1,11 @@
+using DevInsight.Api.Auth;
 using DevInsight.Api.Endpoints;
 using DevInsight.Api.Infrastructure;
 using DevInsight.Application;
 using DevInsight.Infrastructure;
 using DevInsight.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +23,12 @@ app.UseStatusCodePages();
 app.UseSecurityHeaders();
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.UseCors();
+// Cross-origin SPA (GitHub Pages) only; same-origin hosting needs no CORS.
+if (app.Services.GetRequiredService<IOptions<FrontendOptions>>().Value.Origin is not null)
+{
+    app.UseCors();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();

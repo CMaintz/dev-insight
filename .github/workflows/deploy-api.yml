@@ -42,20 +42,39 @@ jobs:
             ${{ env.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+      - name: Skip Azure until it is configured
+        id: azure
+        env:
+          CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        run: |
+          if [ -z "$CLIENT_ID" ]; then
+            echo "::notice::Azure variables not set yet (run scripts/setup-azure.sh); image pushed, rollout skipped."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.azure.outputs.configured == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Roll out the new image
+        if: steps.azure.outputs.configured == 'true'
         env:
           RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
           TAG: ${{ github.sha }}
         run: |
-          # Before the first infrastructure deploy (scripts/setup-azure.sh) there is nothing to roll out yet.
-          if ! az containerapp show --name ca-devinsight-api --resource-group "$RESOURCE_GROUP" --output none 2>/dev/null; then
-            echo "::notice::Container App not created yet; image pushed, rollout skipped."
-            exit 0
+          # `containerapp` is a CLI extension, not preinstalled on the runner.
+          az extension add --name containerapp --upgrade --only-show-errors
+          # Before the first infrastructure deploy there is nothing to roll out yet. Only "not found" is
+          # tolerated; any other error (auth, extension, network) fails the job instead of skipping silently.
+          if ! output=$(az containerapp show --name ca-devinsight-api --resource-group "$RESOURCE_GROUP" --output none 2>&1); then
+            if echo "$output" | grep -q "ResourceNotFound"; then
+              echo "::notice::Container App not created yet; image pushed, rollout skipped."
+              exit 0
+            fi
+            echo "$output"; exit 1
           fi
           az containerapp update \
             --name ca-devinsight-api \

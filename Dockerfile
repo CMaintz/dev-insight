@@ -11,7 +11,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # --- Backend ------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+FROM mcr.microsoft.com/dotnet/sdk:10.0.401 AS api
 WORKDIR /src/backend
 COPY backend/global.json backend/Directory.Build.props backend/Directory.Packages.props backend/DevInsight.slnx ./
 COPY backend/src/ src/
