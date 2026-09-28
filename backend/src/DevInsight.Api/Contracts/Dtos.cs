@@ -12,6 +12,8 @@ public sealed record UpdateProfileRequest(string? Bio, string? LinkedInUrl, bool
 
 public sealed record TokenDto(string AccessToken, DateTimeOffset ExpiresAt);
 
+public sealed record ExchangeRequest(string? Code);
+
 public sealed record RepositoryDto(
     Guid Id, string Name, string FullName, string? Description, string HtmlUrl, string? Language,
     int Stars, int Forks, bool IsFork, bool IsPrivate, bool IsArchived, DateTimeOffset? LastActivity,

@@ -51,25 +51,6 @@ public sealed class SessionTokenIssuer(IOptions<JwtOptions> options, TimeProvide
     }
 }
 
-/// <summary>The session cookie: HttpOnly so scripts never see the token; SameSite=Strict so it is never sent cross-site.</summary>
-public static class SessionCookie
-{
-    public const string Name = "devinsight_session";
-
-    public static void Append(HttpContext context, IssuedToken token) =>
-        context.Response.Cookies.Append(Name, token.AccessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = context.Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-            Expires = token.ExpiresAt,
-            Path = "/",
-        });
-
-    public static void Delete(HttpContext context) =>
-        context.Response.Cookies.Delete(Name, new CookieOptions { Path = "/", SameSite = SameSiteMode.Strict });
-}
-
 public static class ClaimsPrincipalExtensions
 {
     public static Guid GetUserId(this ClaimsPrincipal principal) =>

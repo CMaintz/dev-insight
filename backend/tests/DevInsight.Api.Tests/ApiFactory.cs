@@ -22,6 +22,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private PostgreSqlContainer? _postgres;
     private string? _connectionString;
 
+    public const string FrontendUrl = "https://cmaintz.github.io/DevInsight";
+
     public string? UnavailableReason { get; private set; }
     public FakeGitHub GitHub { get; } = new();
 
@@ -59,6 +61,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("ConnectionStrings:DevInsight", _connectionString ?? "Host=unavailable");
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-at-least-32-bytes");
         builder.UseSetting("GitHub:CallbackUrl", "http://localhost/api/auth/github/callback");
+        builder.UseSetting("Frontend:Url", FrontendUrl);
         builder.UseSetting("AnalysisWorker:ScheduledReanalysisHours", "0");
         builder.UseSetting("Database:MigrateOnStartup", "true");
         builder.ConfigureServices(services =>

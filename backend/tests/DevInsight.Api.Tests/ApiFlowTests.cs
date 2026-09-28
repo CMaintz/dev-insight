@@ -15,7 +15,10 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
     private HttpClient NewClient() =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
 
-    /// <summary>Walks the real OAuth round trip (state cookie → callback → session cookie).</summary>
+    /// <summary>
+    /// Walks the real round trip: login (state cookie) → GitHub callback → redirect to the SPA with a
+    /// one-time code → code exchanged for a bearer JWT, which the returned client then sends.
+    /// </summary>
     private async Task<HttpClient> SignInAsync(string login, string returnUrl = "/dashboard")
     {
         var client = NewClient();
@@ -25,7 +28,15 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         var callback = await client.GetAsync($"/api/auth/github/callback?code={login}&state={state}", Ct);
         callback.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-        callback.Headers.Location!.OriginalString.ShouldBe(returnUrl);
+        var spa = callback.Headers.Location!;
+        spa.GetLeftPart(UriPartial.Path).ShouldBe($"{ApiFactory.FrontendUrl}/auth/callback");
+        var query = HttpUtility.ParseQueryString(spa.Query);
+        query["returnUrl"].ShouldBe(returnUrl);
+
+        var token = await client.PostAsJsonAsync("/api/auth/exchange", new { code = query["code"] }, Ct).ReadJsonAsync();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token["accessToken"]!.GetValue<string>());
+        (await client.PostAsJsonAsync("/api/auth/exchange", new { code = query["code"] }, Ct)).StatusCode
+            .ShouldBe(HttpStatusCode.BadRequest, "sign-in codes are single-use");
         return client;
     }
 
@@ -51,8 +62,32 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         var callback = await client.GetAsync("/api/auth/github/callback?code=mallory&state=forged", Ct);
 
-        callback.Headers.Location!.OriginalString.ShouldBe("/?signin=failed");
-        (await client.GetAsync("/api/me", Ct)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        callback.Headers.Location!.OriginalString.ShouldBe($"{ApiFactory.FrontendUrl}/auth/callback?error=signin_failed");
+    }
+
+    [Fact]
+    public async Task Cors_allows_only_the_configured_frontend_origin()
+    {
+        factory.SkipIfUnavailable();
+        async Task<string?> PreflightAsync(string origin)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Options, "/api/dashboard");
+            request.Headers.Add("Origin", origin);
+            request.Headers.Add("Access-Control-Request-Method", "GET");
+            request.Headers.Add("Access-Control-Request-Headers", "authorization");
+            var response = await NewClient().SendAsync(request, Ct);
+            return response.Headers.TryGetValues("Access-Control-Allow-Origin", out var values) ? values.Single() : null;
+        }
+
+        (await PreflightAsync("https://cmaintz.github.io")).ShouldBe("https://cmaintz.github.io");
+        (await PreflightAsync("https://evil.example")).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Unknown_sign_in_code_is_rejected()
+    {
+        factory.SkipIfUnavailable();
+        (await NewClient().PostAsJsonAsync("/api/auth/exchange", new { code = "made-up" }, Ct)).StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -65,7 +100,8 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
 
         var callback = await client.GetAsync($"/api/auth/github/callback?code=eve&state={state}", Ct);
 
-        callback.Headers.Location!.OriginalString.ShouldBe("/dashboard");
+        HttpUtility.ParseQueryString(callback.Headers.Location!.Query)["returnUrl"]
+            .ShouldBe("/dashboard");
     }
 
     [Fact]
@@ -76,6 +112,7 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var token = await browser.PostAsync("/api/auth/token", null, Ct).ReadJsonAsync();
 
         var apiClient = factory.CreateClient();
+        (await apiClient.GetAsync("/api/me", Ct)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
         apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token["accessToken"]!.GetValue<string>());
         (await apiClient.GetAsync("/api/me", Ct).ReadJsonAsync())["login"]!.GetValue<string>().ShouldBe("bearer-user");
     }
@@ -160,9 +197,8 @@ public sealed class ApiFlowTests(ApiFactory factory) : IClassFixture<ApiFactory>
         portfolio["scores"]!["overall"]!.GetValue<int>().ShouldBeInRange(1, 100);
         portfolio["strengths"]!.AsArray().ShouldAllBe(s => s!["title"] != null);
 
-        // Logout ends the session
+        // Logout is client-side (discard the token); the endpoint just acknowledges it
         (await client.PostAsync("/api/auth/logout", null, Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        (await client.GetAsync("/api/me", Ct)).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     private static async Task<JsonNode> WaitForRunAsync(HttpClient client, string runId)

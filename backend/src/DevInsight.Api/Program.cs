@@ -21,6 +21,7 @@ app.UseStatusCodePages();
 app.UseSecurityHeaders();
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();

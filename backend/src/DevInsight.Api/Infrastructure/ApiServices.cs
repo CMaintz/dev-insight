@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using DevInsight.Api.Auth;
 using DevInsight.Api.Endpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -39,6 +40,23 @@ internal static class ApiServices
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Section));
         services.AddSingleton<SessionTokenIssuer>();
         services.AddSingleton<OAuthState>();
+        services.AddMemoryCache();
+        services.AddSingleton<SignInCodes>();
+        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.Section));
+
+        // The SPA may live on another origin (GitHub Pages). Bearer tokens, no cookies ⇒ no credentials mode.
+        services.AddCors();
+        services.AddOptions<CorsOptions>().Configure<IOptions<FrontendOptions>>((cors, frontend) =>
+        {
+            if (frontend.Value.Origin is { } origin)
+            {
+                cors.AddDefaultPolicy(policy => policy
+                    .WithOrigins(origin)
+                    .WithHeaders("Authorization", "Content-Type")
+                    .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
+                    .WithExposedHeaders("Location"));
+            }
+        });
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
@@ -53,19 +71,6 @@ internal static class ApiServices
                     IssuerSigningKey = jwt.GetSecurityKey(),
                     ClockSkew = TimeSpan.FromMinutes(1),
                 };
-                // Browsers authenticate with the HttpOnly session cookie; API clients with a Bearer header.
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        if (string.IsNullOrEmpty(context.Token))
-                        {
-                            context.Token = context.Request.Cookies[SessionCookie.Name];
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                };
             });
         services.AddAuthorization();
     }
@@ -76,6 +81,7 @@ internal static class ApiServices
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy(ApiEndpoints.AnalysisRateLimit, context => PerUser(context, permitsPerMinute: 30));
             options.AddPolicy(ApiEndpoints.ImportRateLimit, context => PerUser(context, permitsPerMinute: 5));
+            options.AddPolicy(AuthEndpoints.ExchangeRateLimit, context => PerUser(context, permitsPerMinute: 20));
         });
 
     private static RateLimitPartition<string> PerUser(HttpContext context, int permitsPerMinute) =>

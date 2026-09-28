@@ -28,3 +28,6 @@ appsettings.*.local.json
 
 # --- Foundry loop telemetry (local observability) ---
 .foundry/
+
+# Local deployment values written by scripts/setup-azure.sh
+.env.azure

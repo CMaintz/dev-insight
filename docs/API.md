@@ -8,16 +8,18 @@ in Development). This document is the human-readable overview.
 
 ## Authentication
 
-Browser clients authenticate with an **HttpOnly session cookie** (`devinsight_session`) holding a
-signed JWT. It is set by the GitHub OAuth callback; the SPA never sees the token. Scripts and API
-clients can instead send `Authorization: Bearer <jwt>` (get one from `POST /api/auth/token`).
+All protected endpoints take `Authorization: Bearer <jwt>`. The SPA may be hosted on another origin
+(GitHub Pages), so there are no session cookies; sign-in hands the SPA a single-use code instead:
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/api/auth/github/login?returnUrl=/dashboard` | – | 302 to GitHub's consent screen. `returnUrl` must be a local path. |
-| GET | `/api/auth/github/callback?code=…&state=…` | – | GitHub redirects here. Creates/updates the user, sets the cookie, 302 to `returnUrl`. |
-| POST | `/api/auth/logout` | – | 204, clears the cookie. |
-| POST | `/api/auth/token` | ✓ | `{ accessToken, expiresAt }` — a JWT for API clients (UC1 "returns JWT"). |
+| GET | `/api/auth/github/callback?code=…&state=…` | – | GitHub redirects here. Creates/updates the user, then 302 to `{Frontend:Url}/auth/callback?code=<one-time code>&returnUrl=…` (or `?error=signin_failed`). |
+| POST | `/api/auth/exchange` | – | `{ code }` → `{ accessToken, expiresAt }`. Codes are single-use and expire after 60 s. |
+| POST | `/api/auth/token` | ✓ | `{ accessToken, expiresAt }` — a fresh JWT for the signed-in user (scripts, API clients). |
+| POST | `/api/auth/logout` | – | 204. Tokens are stateless; the client discards its token. |
+
+CORS allows only the configured frontend origin (`Frontend:Url`).
 
 Unauthenticated calls to protected endpoints return **401**. Resources owned by another user
 return **404** (never 403), so IDs cannot be probed.
