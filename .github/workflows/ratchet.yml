@@ -5,3 +5,8 @@ jobs:
   ratchet:
     uses: CMaintz/foundry/.github/workflows/ratchet-report.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36
     permissions: { contents: read, pull-requests: write }
+    with:
+      # Monorepo: each package keeps its own habit-hooks baseline.
+      baselines: |
+        backend/.habit-hooks/snooze.json
+        frontend/.habit-hooks/snooze.json
