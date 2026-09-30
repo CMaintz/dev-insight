@@ -6,27 +6,47 @@
     ":dependencyDashboard",
     ":semanticCommits"
   ],
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
       "description": "The CONTRACT says pin everything; Renovate is the update path. Keep Actions pinned to a digest and bump the digest + the trailing # vN comment together.",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github-actions",
-      "pinDigests": true
+      "pinDigests": true,
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Toolchain versions declared in mise.toml [tools].",
-      "matchManagers": ["mise"],
-      "groupName": "mise toolchain"
+      "matchManagers": [
+        "mise"
+      ],
+      "groupName": "mise toolchain",
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Security fixes land fast and on their own, labelled.",
-      "matchPackageNames": ["*"],
+      "matchPackageNames": [
+        "*"
+      ],
       "isVulnerabilityAlert": true,
-      "labels": ["security"],
-      "prPriority": 10
+      "labels": [
+        "security"
+      ],
+      "prPriority": 10,
+      "minimumReleaseAge": false
     }
   ],
-  "lockFileMaintenance": { "enabled": true },
-  "vulnerabilityAlerts": { "labels": ["security"] }
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security"
+    ]
+  },
+  "minimumReleaseAge": "7 days"
 }
