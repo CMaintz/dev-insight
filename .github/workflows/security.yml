@@ -9,7 +9,7 @@ jobs:
   security:
     # ruleset-guard reads the PR's labels; a called workflow can't exceed the caller's grant.
     permissions: { contents: read, pull-requests: read }
-    uses: CMaintz/foundry/.github/workflows/security.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36 # main after PR #29
+    uses: CMaintz/foundry/.github/workflows/security.yml@467d6f5feb6f2d7258d4478f98043570f4da2c6e # v2.3.0
     with:
       # Gate-defining files: changing these together with production source needs the ruleset-change label.
       ruleset_paths: '^(mise\.toml|backend/mise\.toml|frontend/mise\.toml|\.editorconfig|backend/Directory\.Build\.props|backend/\.habit-hooks/|frontend/\.habit-hooks/|frontend/eslint\.config\.js|frontend/\.prettierrc|frontend/\.jscpd\.json|frontend/angular\.json|\.github/workflows/(gate|security|ratchet|bootstrap)\.yml)'
