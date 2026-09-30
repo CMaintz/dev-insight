@@ -12,6 +12,7 @@ useDefault = true
 [allowlist]
 description = "Confirmed non-secrets only."
 paths = [
-  # '''frontend/src/environments/environment\.ts$''',   # public Firebase web config
-  # '''.*/src/test/.*Fixture\.java$''',                  # dummy test values
+  # Integration-test host only: a plain-text dummy JWT signing key ("integration-test-signing-key-…"),
+  # used to sign tokens inside WebApplicationFactory. Not a credential for anything real.
+  '''^backend/tests/DevInsight\.Api\.Tests/ApiFactory\.cs$''',
 ]
