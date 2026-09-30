@@ -3,7 +3,7 @@ name: ratchet
 on: { pull_request: {} }
 jobs:
   ratchet:
-    uses: CMaintz/foundry/.github/workflows/ratchet-report.yml@9a9f41d2f7a481bc86bb4a2bbdd49c4e4c8e0e36
+    uses: CMaintz/foundry/.github/workflows/ratchet-report.yml@467d6f5feb6f2d7258d4478f98043570f4da2c6e # v2.3.0
     permissions: { contents: read, pull-requests: write }
     with:
       # Monorepo: each package keeps its own habit-hooks baseline.

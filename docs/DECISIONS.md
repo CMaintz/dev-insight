@@ -192,8 +192,8 @@ data-table twins for every chart, token cleared on a 401 from the session probe.
 
 ## Foundry
 
-63. ⚙️ **Reusable workflows pinned to Foundry commit `9a9f41d`** (main right after PR #29) — the .NET stack is
-    not in a release tag yet (v2.1.0 predates it). Move to the next `v2.x` tag once release-please cuts it.
+63. ⚙️ **Reusable workflows pinned to Foundry `v2.3.0`** (by commit SHA) — the first release with the .NET stack
+    and the fixes for the security-facade startup failure and the ratchet report on a new baseline.
 64. ⚙️ **Two packages, one oracle.** `backend/mise.toml` and `frontend/mise.toml` each define the six verbs;
     the root `mise.toml` runs each verb in both. CI calls the gate facade once per package
     (`stack: dotnet` / `stack: ts`). Toolchains are pinned per package, so the backend job doesn't install Node.
