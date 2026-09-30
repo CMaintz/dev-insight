@@ -1,0 +1,78 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.fb {
+  --fb-accent: var(--status-serious);
+
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--fb-accent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.fb.sev-high {
+  --fb-accent: var(--status-critical);
+}
+
+.fb.sev-low {
+  --fb-accent: var(--status-warning);
+}
+
+.fb.fb--strength {
+  --fb-accent: var(--status-good);
+}
+
+.fb__head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.fb__icon {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--fb-accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex: none;
+}
+
+.fb__title {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.fb__message {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.fb__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  @include mixins.pill;
+}
+
+.tag--ai {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}

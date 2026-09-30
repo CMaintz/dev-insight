@@ -1,61 +1,107 @@
 # DevInsight
 
-A developer insight and portfolio platform that imports GitHub repositories, analyzes developer activity and code quality, generates actionable feedback, and builds a public developer portfolio backed by real data.
+> **A system that analyses developers' codebases and visualises their development over time.**
 
-> **Status:** In active development. The backend foundation (Spring Boot, hexagonal architecture, GitHub integration, persistence layer) is in place; see `project_overview.md` for the full specification and roadmap.
+Most developer portfolios are static: a list of projects and a few adjectives. DevInsight is built on
+the opposite idea — show *how* someone develops, backed by data they can't fake. It imports a user's
+GitHub repositories, measures activity, commit habits, structure and quality, turns those measurements
+into explainable scores and concrete feedback, and publishes the result as a living portfolio.
 
-## What it does
-
-- **GitHub login** — OAuth authentication, returning a JWT for API access
-- **Repository import** — fetches a user's repositories via the GitHub API and stores them without duplicates; repositories can be toggled in/out of the portfolio
-- **Analysis engine** — computes explainable metrics per repository, in two scopes (whole repo vs. the user's own contributions):
-  - *Activity*: commit frequency, recency, totals
-  - *Commit quality*: average commit size, size variance, vague-message detection ("fix", "stuff", "update")
-  - *Structure*: file size distribution, files > 500 LOC, folder depth, monolith indicators
-  - *Quality heuristics*: test presence, README presence, lint config, contributor count
-  - *Languages*: distribution per repo and aggregated per user
-- **Scoring** — metrics roll up into activity / structure / quality scores and an overall 0–100 score
-- **Feedback** — rule-based feedback items with severity levels (AI feedback planned)
-- **Dashboard & portfolio** — charts, time-series score evolution, language distribution, and a public portfolio page showing selected repositories (Angular frontend planned)
-
-## Tech Stack
-
-- **Java 21**, **Spring Boot 3.3** (Web, Security, OAuth2 Client, Data JPA, Validation)
-- **Hexagonal architecture** (Ports & Adapters): `domain/{model,port,service}` core with `adapter/in/rest` and `adapter/out/{github,persistence}` adapters
-- **PostgreSQL** + **Flyway** migrations
-- **JWT** (jjwt) for stateless API auth
-- **GitHub API** via `org.kohsuke:github-api`
-- **Lombok**, **JUnit / Spring Security Test**
-- **Maven**
+- **Live:** https://cmaintz.github.io/dev-insight/ (once deployed)
+- **Private dashboard** — scores, activity over time, score evolution, language mix, commit-size
+  distribution, and the most important feedback across your repositories.
+- **Explainable analysis** — every score is the weighted sum of stored metrics; the UI shows each
+  metric's value, points and weight. Two scopes: the *whole repository*, or *only your contributions*.
+- **Feedback** — rule-based findings (vague commits, monoliths, missing tests, …) including what you do
+  well, plus optional AI feedback grounded strictly in the measured data.
+- **Public portfolio** at `/u/<github-login>` — your selected repositories scored on *your own* commits,
+  projects with images, languages, activity and strengths. Private until you publish it.
 
 ## Architecture
 
 ```
-src/main/java/com/devinsight/
-├── domain/
-│   ├── model/          Core entities (User, Repository, Analysis, Feedback…)
-│   ├── port/in|out/    Use case and infrastructure interfaces
-│   └── service/        Analysis, scoring, and feedback logic
-├── adapter/
-│   ├── in/rest/        REST controllers + DTOs
-│   └── out/
-│       ├── github/     GitHub API adapter
-│       └── persistence/ JPA entities + repositories
-└── infrastructure/config/  Security, OAuth, beans
+frontend/   Angular 22 SPA (standalone components, signals, zoneless, Vitest)
+backend/
+  src/
+    DevInsight.Domain          entities, analysis engine, scoring, feedback rules — no dependencies
+    DevInsight.Application     use cases (UC1–UC6) and the ports they need
+    DevInsight.Infrastructure  adapters: PostgreSQL (EF Core), GitHub (Octokit), git CLI, Claude, workers
+    DevInsight.Api             ASP.NET Core minimal APIs, auth, OpenAPI, hosts the SPA
+  tests/                       domain · application · infrastructure · architecture · API integration
+docs/       API.md · DEPLOYMENT.md · DECISIONS.md (every design decision and why)
+infra/      Bicep template for Azure Container Apps (+ PostgreSQL)
 ```
 
-All dependencies point inward toward the domain; the GitHub client, database, and REST layer are swappable adapters behind ports.
+Hexagonal (ports & adapters): dependencies point inward, and an architecture test fails the build if the
+domain or application layer ever references EF Core, ASP.NET Core, Octokit or the AI SDK.
 
-## Running
+**How an analysis runs.** `POST /api/analysis/run/{repo}` stores a queued run and returns `202`. A
+background worker clones the repository with `git` (one clone replaces thousands of rate-limited API
+calls), feeds the commit history and files at HEAD to the pure analysis engine, applies the feedback
+rules (and optionally Claude), and stores an append-only analysis. The sequence of analyses *is* the
+score history; a scheduled job re-analyses selected repositories daily so the history grows by itself.
 
-Requires Java 21, Maven, and a PostgreSQL instance (Flyway migrates the schema on startup).
+### Scoring
+
+| Dimension (weight) | Made of |
+|---|---|
+| **Activity** (30 %) | recency of the last commit · commits/week over 12 weeks · share of active weeks in the last 26 |
+| **Structure** (30 %) | share of files > 500 LOC · monolith check · median file size · folder depth |
+| **Quality** (40 %) | tests · commit-message quality · README · lint/format config · CI |
+
+Exact formulas and thresholds: [`docs/DECISIONS.md`](docs/DECISIONS.md) §26 and `backend/src/DevInsight.Domain/Analyses/Engine`.
+
+## Tech stack
+
+.NET 10 (C# 14) · ASP.NET Core minimal APIs · EF Core 10 + PostgreSQL 17 · Octokit · Anthropic C# SDK ·
+Azure Container Apps · Bicep · GitHub Actions (OIDC) · GitHub Pages ·
+Angular 22 · ngx-charts · xUnit v3 · Shouldly · NetArchTest · Testcontainers · Vitest · Docker · mise.
+
+## Running locally
+
+Prerequisites: [mise](https://mise.jdx.dev) (installs the pinned .NET SDK and Node), Docker, and a
+[GitHub OAuth App](https://github.com/settings/developers) with callback URL
+`http://localhost:4200/api/auth/github/callback`.
 
 ```bash
-mvn spring-boot:run
+mise install                                   # .NET 10.0.401 + Node 24.21.0
+docker compose up -d db                        # PostgreSQL on :5432
+
+cd backend
+dotnet user-secrets --project src/DevInsight.Api set GitHub:ClientId     <client id>
+dotnet user-secrets --project src/DevInsight.Api set GitHub:ClientSecret <client secret>
+dotnet run --project src/DevInsight.Api        # API on :5080, migrates the database on startup
+
+cd ../frontend
+npm ci && npm start                            # SPA on :4200, proxies /api to :5080
 ```
 
-Tests:
+Open http://localhost:4200, sign in with GitHub, import, analyse, publish.
+
+**Production:** the SPA is on GitHub Pages and the API on Azure Container Apps — see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) and run `bash scripts/setup-azure.sh` once.
+
+**Everything in one container:** `cp .env.example .env`, fill it in (callback URL
+`http://localhost:8080/api/auth/github/callback`), then `docker compose up --build` → http://localhost:8080.
+
+**AI feedback** is optional: set `AiFeedback:ApiKey` (Anthropic API key) and every analysis gets up to
+five additional, data-grounded findings. Without it, feedback is rule-based only.
+
+API reference: http://localhost:5080/scalar (OpenAPI at `/openapi/v1.json`); overview in [`docs/API.md`](docs/API.md).
+
+## Testing
 
 ```bash
-mvn test
+cd backend && dotnet test          # all backend suites (API tests need Docker, or DEVINSIGHT_TEST_POSTGRES)
+cd frontend && npm test            # Vitest with coverage
 ```
+
+The API integration tests boot the real application — auth, database, background worker — against a
+disposable PostgreSQL and walk the whole journey: GitHub sign-in → import → analyse → dashboard →
+publish → public portfolio, plus the security cases (forged OAuth state, open redirects, cross-user access).
+
+## Status and roadmap
+
+Implemented: UC1–UC6 from the specification, projects, scheduled snapshots, optional AI feedback.
+Next candidates: GitLab provider, historical score back-fill from commit history, recruiter view,
+CI coverage import. The original Spring Boot skeleton is preserved under the `java-skeleton` git tag.

@@ -1,0 +1,95 @@
+<div class="page narrow">
+  <header class="page-header">
+    <div>
+      <h1>Settings</h1>
+      <p>Your public profile and portfolio visibility.</p>
+    </div>
+  </header>
+
+  @if (session.profile(); as profile) {
+    <section class="card identity" aria-label="GitHub account">
+      @if (profile.avatarUrl) {
+        <img [src]="profile.avatarUrl" alt="" width="56" height="56" />
+      }
+      <div>
+        <strong>{{ profile.name ?? profile.login }}</strong>
+        <p class="muted small">
+          Signed in with GitHub as {{ '@' + profile.login }}
+          @if (profile.email) {
+            · {{ profile.email }}
+          }
+        </p>
+      </div>
+    </section>
+  }
+
+  <form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2>Profile</h2>
+    <div class="field">
+      <label for="bio">Bio</label>
+      <textarea
+        id="bio"
+        class="textarea"
+        formControlName="bio"
+        aria-describedby="bio-hint"
+        [attr.aria-invalid]="form.controls.bio.invalid"
+      ></textarea>
+      <span id="bio-hint" class="field__hint">
+        Shown at the top of your portfolio. {{ form.controls.bio.value.length }} / {{ bioMax }}
+      </span>
+      @if (form.controls.bio.invalid && form.controls.bio.touched) {
+        <span class="field__error">Keep your bio under {{ bioMax }} characters.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="linkedin">LinkedIn URL</label>
+      <input
+        id="linkedin"
+        class="input"
+        type="url"
+        inputmode="url"
+        placeholder="https://www.linkedin.com/in/your-name"
+        formControlName="linkedInUrl"
+        aria-describedby="linkedin-hint"
+        [attr.aria-invalid]="form.controls.linkedInUrl.invalid && form.controls.linkedInUrl.touched"
+      />
+      <span id="linkedin-hint" class="field__hint"
+        >Optional. Must be an https://linkedin.com link.</span
+      >
+      @if (form.controls.linkedInUrl.invalid && form.controls.linkedInUrl.touched) {
+        <span class="field__error">Enter an https:// link on linkedin.com.</span>
+      }
+    </div>
+
+    <label class="check publish">
+      <input type="checkbox" formControlName="isPortfolioPublic" />
+      <span>
+        <strong>Publish my portfolio</strong>
+        <span class="muted small block"
+          >Anyone with the link can see your selected repositories, scores and projects.</span
+        >
+      </span>
+    </label>
+
+    <div class="actions">
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </div>
+  </form>
+
+  @if (portfolioPath(); as path) {
+    <section class="card" aria-labelledby="portfolio-title">
+      <h2 id="portfolio-title">Your portfolio</h2>
+      <p class="muted small">
+        @if (session.profile()?.isPortfolioPublic) {
+          Published — share this link:
+        } @else {
+          Not published yet. Only you can preview it:
+        }
+      </p>
+      <a class="btn" [routerLink]="path">Open {{ path }}</a>
+    </section>
+  }
+</div>

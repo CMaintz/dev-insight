@@ -1,0 +1,107 @@
+<div
+  class="page"
+  [class.is-stale]="dashboard.isLoading() && !!data()"
+  [attr.aria-busy]="dashboard.isLoading()"
+>
+  <header class="page-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Your development at a glance, across selected repositories.</p>
+    </div>
+    <div class="page-actions">
+      <app-scope-toggle [(scope)]="scope" />
+      <app-workspace-actions-bar [selectedCount]="data()?.selectedCount ?? 0" />
+    </div>
+  </header>
+
+  @if (tracker.activeCount() > 0) {
+    <div class="card running" role="status">
+      <span
+        >{{ tracker.activeCount() }} analysis runs in progress — the dashboard refreshes as they
+        finish.</span
+      >
+      <div class="progress" aria-hidden="true"></div>
+    </div>
+  }
+
+  @if (data(); as d) {
+    @if (showGuide() && progress(); as p) {
+      <app-first-run-guide [progress]="p" />
+    }
+
+    @if (d.repositoryCount === 0) {
+      <app-import-prompt
+        heading="No repositories yet"
+        text="Import your GitHub repositories to start. Nothing is analysed until you select and analyse them."
+      />
+    } @else {
+      <section class="card scores" aria-labelledby="scores-title">
+        <h2 id="scores-title" class="visually-hidden">Average scores</h2>
+        @if (d.averageScores; as s) {
+          <app-score-breakdown [scores]="s" />
+          <p class="muted small">
+            Averaged over {{ d.analyzedCount }} analysed of {{ d.selectedCount }} selected
+            repositories.
+          </p>
+        } @else {
+          <p class="muted">
+            No scores yet. Select repositories and run “Analyse all selected” to compute them.
+          </p>
+        }
+      </section>
+
+      <section class="grid grid--kpis" aria-label="Key figures">
+        <app-kpi-tile
+          label="Repositories"
+          [value]="d.repositoryCount"
+          hint="imported from GitHub"
+        />
+        <app-kpi-tile label="Selected" [value]="d.selectedCount" hint="count toward your scores" />
+        <app-kpi-tile
+          label="Analysed"
+          [value]="d.analyzedCount"
+          hint="have a score in this scope"
+        />
+        <app-kpi-tile
+          label="Vague commits"
+          [value]="vagueShare()"
+          hint="messages like “fix” or “update”"
+        />
+      </section>
+
+      <div class="grid grid--2">
+        <div class="card"><app-activity-chart [weeks]="d.activity" /></div>
+        <div class="card"><app-score-evolution-chart [points]="d.scoreEvolution" /></div>
+        <div class="card"><app-languages-chart [languages]="d.languages" /></div>
+        <div class="card"><app-commit-size-chart [quality]="d.commitQuality" /></div>
+      </div>
+
+      <section aria-labelledby="repos-title">
+        <div class="section-head">
+          <h2 id="repos-title" class="section-title">Repositories</h2>
+          <a routerLink="/repositories" class="small">Manage repositories</a>
+        </div>
+        <app-repo-score-table [rows]="d.repositories" />
+      </section>
+
+      <section aria-labelledby="fb-title">
+        <h2 id="fb-title" class="section-title">Top improvement opportunities</h2>
+        @for (item of d.topFeedback; track item.feedback.id) {
+          <a class="fb-link" [routerLink]="['/repositories', item.repositoryId]">
+            <app-feedback-item [feedback]="item.feedback" [context]="item.repositoryName" />
+          </a>
+        } @empty {
+          <p class="muted">No open improvement items — nice work.</p>
+        }
+      </section>
+    }
+  } @else if (dashboard.isLoading()) {
+    <app-page-skeleton label="Loading dashboard" />
+  } @else if (dashboard.error()) {
+    <app-load-error
+      heading="Could not load the dashboard"
+      text="Check that the API is running, then try again."
+      (retry)="dashboard.reload()"
+    />
+  }
+</div>

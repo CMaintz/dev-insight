@@ -1,0 +1,94 @@
+.landing {
+  gap: 3.5rem;
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+  padding: 2.5rem 0 1rem;
+  max-width: 48rem;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    letter-spacing: -0.02em;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.gh {
+  fill: currentColor;
+}
+
+.dims {
+  margin-top: 1rem;
+}
+
+.dim__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1.0625rem;
+  }
+}
+
+.steps {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.step {
+  display: flex;
+  gap: 0.75rem;
+
+  h3 {
+    margin: 0.125rem 0 0.25rem;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.step__num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.scopes p {
+  margin: 0;
+}

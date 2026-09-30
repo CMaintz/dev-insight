@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DevInsight.Api/DevInsight.Api.csproj" />
+    <Project Path="src/DevInsight.Application/DevInsight.Application.csproj" />
+    <Project Path="src/DevInsight.Domain/DevInsight.Domain.csproj" />
+    <Project Path="src/DevInsight.Infrastructure/DevInsight.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DevInsight.Api.Tests/DevInsight.Api.Tests.csproj" />
+    <Project Path="tests/DevInsight.Application.Tests/DevInsight.Application.Tests.csproj" />
+    <Project Path="tests/DevInsight.ArchitectureTests/DevInsight.ArchitectureTests.csproj" />
+    <Project Path="tests/DevInsight.Domain.Tests/DevInsight.Domain.Tests.csproj" />
+    <Project Path="tests/DevInsight.Infrastructure.Tests/DevInsight.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

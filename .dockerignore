@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+**/TestResults/
+.git/
+.idea/
+.vscode/
+.env
+additional-brainstorming-and-context/
+backend/tests/

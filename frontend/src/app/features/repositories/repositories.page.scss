@@ -1,0 +1,27 @@
+@use 'mixins';
+
+.filters {
+  display: grid;
+  gap: 1rem;
+  align-items: end;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .filters {
+    grid-template-columns: 2fr 1fr auto;
+  }
+}
+
+.list {
+  @include mixins.panel;
+  overflow: hidden;
+
+  > li + li {
+    border-top: 1px solid var(--border);
+  }
+}
+
+p.small {
+  margin: -0.5rem 0 0;
+}

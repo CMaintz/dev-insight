@@ -1,0 +1,131 @@
+<div class="page">
+  <a routerLink="/repositories" class="back small">← All repositories</a>
+
+  @if (repoData(); as r) {
+    <header class="page-header">
+      <div class="repo-head">
+        <h1>{{ r.name }}</h1>
+        <p>
+          <a [href]="r.htmlUrl" target="_blank" rel="noopener noreferrer">{{ r.fullName }}</a>
+          @if (r.language) {
+            · {{ r.language }}
+          }
+          · ★ {{ formatInteger(r.stars) }} · last active {{ formatDate(r.lastActivity) }}
+        </p>
+        @if (r.description) {
+          <p class="desc">{{ r.description }}</p>
+        }
+      </div>
+      <div class="page-actions">
+        <app-scope-toggle [(scope)]="scope" />
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="analyse()"
+          [disabled]="run().phase === 'active'"
+        >
+          {{ run().phase === 'active' ? run().label + '…' : 'Analyse now' }}
+        </button>
+      </div>
+    </header>
+  } @else if (repoMissing()) {
+    <app-empty-state
+      icon="🔍"
+      heading="Repository not found"
+      text="It may have been removed, or it belongs to another account."
+    >
+      <a class="btn" routerLink="/repositories">Back to repositories</a>
+    </app-empty-state>
+  }
+
+  @if (run().phase === 'active') {
+    <div class="card running" role="status">
+      <span>{{ run().label }} — results appear here when the run finishes.</span>
+      <div class="progress" aria-hidden="true"></div>
+    </div>
+  }
+
+  @if (analysisData(); as a) {
+    <section class="card scores" aria-labelledby="score-title">
+      <h2 id="score-title" class="visually-hidden">Scores</h2>
+      @if (scoreSummary(); as summary) {
+        <app-score-breakdown [scores]="summary" dimensionSize="md" />
+      }
+      <p class="muted small scores__meta">
+        Analysed {{ formatDate(a.createdAt) }}
+        @if (a.headCommitSha) {
+          at commit <code>{{ a.headCommitSha.slice(0, 7) }}</code>
+        }
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="why-title">
+      <h2 id="why-title">Why this score?</h2>
+      <p class="muted small intro">
+        Each dimension is a weighted average of the points its metrics earned. Informational metrics
+        add context but do not change the score.
+      </p>
+      <app-metric-breakdown [metrics]="a.metrics" [dimensionScores]="dimensionScores()" />
+    </section>
+
+    <div class="grid grid--2">
+      <div class="card"><app-activity-chart [weeks]="a.timeline" /></div>
+      <div class="card">
+        <app-score-evolution-chart [points]="historyData()" heading="Score history" />
+      </div>
+      <div class="card"><app-languages-chart [languages]="languages()" /></div>
+      <section class="card" aria-labelledby="files-title">
+        <h2 id="files-title">Largest files</h2>
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption class="visually-hidden">
+              Ten largest files by line count
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Path</th>
+                <th scope="col" class="num">Lines</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (file of a.largestFiles; track file.path) {
+                <tr [class.is-large]="file.lines > 500">
+                  <td class="path">
+                    <code>{{ file.path }}</code>
+                  </td>
+                  <td class="num">{{ formatInteger(file.lines) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="2" class="muted">No files measured.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">Feedback</h2>
+      <app-feedback-list [feedback]="a.feedback" />
+    </section>
+  } @else if (notAnalysed() && !repoMissing()) {
+    <app-empty-state
+      icon="🧪"
+      heading="Not analysed yet"
+      text="This repository has no analysis in the selected scope. Run one to see its scores, metrics and feedback."
+    >
+      <button
+        type="button"
+        class="btn btn--primary"
+        (click)="analyse()"
+        [disabled]="run().phase === 'active'"
+      >
+        Analyse now
+      </button>
+    </app-empty-state>
+  } @else if (analysis.isLoading()) {
+    <div class="skeleton" aria-busy="true" aria-label="Loading analysis"></div>
+  }
+</div>

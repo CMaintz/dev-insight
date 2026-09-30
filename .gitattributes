@@ -1,0 +1,9 @@
+# Normalize to LF everywhere so `dotnet format --verify-no-changes` / prettier agree
+# between Windows checkouts and Linux CI.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.docx binary
+*.cmd text eol=crlf
+*.bat text eol=crlf

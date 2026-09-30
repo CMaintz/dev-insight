@@ -1,0 +1,92 @@
+:host {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 5.5rem;
+  aspect-ratio: 1;
+}
+
+.ring--sm {
+  width: 4rem;
+}
+
+.ring--lg {
+  width: 8.5rem;
+}
+
+svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: none;
+  stroke-width: 8;
+}
+
+.ring__track {
+  stroke: var(--meter-track);
+}
+
+.ring__fill {
+  stroke: var(--tone-color, var(--accent));
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms ease;
+}
+
+.tone-good {
+  --tone-color: var(--status-good);
+}
+
+.tone-fair {
+  --tone-color: var(--status-warning);
+}
+
+.tone-weak {
+  --tone-color: var(--status-critical);
+}
+
+.ring__value {
+  font-size: 1.5rem;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.ring--sm .ring__value {
+  font-size: 1.125rem;
+}
+
+.ring--lg .ring__value {
+  font-size: 2.5rem;
+}
+
+.ring__caption {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.ring__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ring__band {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring__fill {
+    transition: none;
+  }
+}

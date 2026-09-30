@@ -1,0 +1,83 @@
+# Build the API image, push it to GitHub Container Registry and roll it out to Azure Container Apps.
+# Azure login uses OpenID Connect (federated credential) — no Azure secret is stored in GitHub.
+# Required repository variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP.
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", "frontend/**", "Dockerfile", ".github/workflows/deploy-api.yml"]
+  workflow_dispatch: {}
+
+concurrency: { group: deploy-api, cancel-in-progress: false }
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/cmaintz/devinsight-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Skip Azure until it is configured
+        id: azure
+        env:
+          CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        run: |
+          if [ -z "$CLIENT_ID" ]; then
+            echo "::notice::Azure variables not set yet (run scripts/setup-azure.sh); image pushed, rollout skipped."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.azure.outputs.configured == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Roll out the new image
+        if: steps.azure.outputs.configured == 'true'
+        env:
+          RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          TAG: ${{ github.sha }}
+        run: |
+          # `containerapp` is a CLI extension, not preinstalled on the runner.
+          az extension add --name containerapp --upgrade --only-show-errors
+          # Before the first infrastructure deploy there is nothing to roll out yet. Only "not found" is
+          # tolerated; any other error (auth, extension, network) fails the job instead of skipping silently.
+          if ! output=$(az containerapp show --name ca-devinsight-api --resource-group "$RESOURCE_GROUP" --output none 2>&1); then
+            if echo "$output" | grep -q "ResourceNotFound"; then
+              echo "::notice::Container App not created yet; image pushed, rollout skipped."
+              exit 0
+            fi
+            echo "$output"; exit 1
+          fi
+          az containerapp update \
+            --name ca-devinsight-api \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE:$TAG" \
+            --query properties.latestRevisionName --output tsv

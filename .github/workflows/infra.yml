@@ -1,0 +1,19 @@
+# Compile the Bicep template on every change so syntax/type errors surface before a deploy.
+name: infra
+
+on:
+  pull_request:
+    paths: ["infra/**", ".github/workflows/infra.yml"]
+  push:
+    branches: [main]
+    paths: ["infra/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  bicep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: az bicep install --version v0.47.16 && az bicep build --file infra/main.bicep --stdout > /dev/null

@@ -1,0 +1,12 @@
+# PR comment showing how the accepted-debt baselines moved (they may only shrink).
+name: ratchet
+on: { pull_request: {} }
+jobs:
+  ratchet:
+    uses: CMaintz/foundry/.github/workflows/ratchet-report.yml@467d6f5feb6f2d7258d4478f98043570f4da2c6e # v2.3.0
+    permissions: { contents: read, pull-requests: write }
+    with:
+      # Monorepo: each package keeps its own habit-hooks baseline.
+      baselines: |
+        backend/.habit-hooks/snooze.json
+        frontend/.habit-hooks/snooze.json

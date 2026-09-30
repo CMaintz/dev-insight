@@ -1,0 +1,22 @@
+# Repository-level Foundry verbs: each one runs the same verb in backend/ and then frontend/.
+# Toolchains are pinned per package (backend/mise.toml, frontend/mise.toml).
+# `mise run gate` here is what /ship and the pre-push hook run.
+
+[tasks.fix]
+run = ["cd backend && mise run fix", "cd frontend && mise run fix"]
+
+[tasks.lint]
+run = ["cd backend && mise run lint", "cd frontend && mise run lint"]
+
+[tasks.typecheck]
+run = ["cd backend && mise run typecheck", "cd frontend && mise run typecheck"]
+
+[tasks.test]
+run = ["cd backend && mise run test", "cd frontend && mise run test"]
+
+[tasks.audit]
+run = ["cd backend && mise run audit", "cd frontend && mise run audit"]
+
+[tasks.gate]
+description = "The oracle for the whole repository: backend gate, then frontend gate."
+run = ["cd backend && mise run gate", "cd frontend && mise run gate"]

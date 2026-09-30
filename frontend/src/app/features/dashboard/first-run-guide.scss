@@ -1,0 +1,49 @@
+.guide h2 {
+  margin: 0 0 1rem;
+  font-size: 1.0625rem;
+}
+
+.guide__steps {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.guide__step {
+  display: flex;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+
+  p {
+    margin: 0.125rem 0 0.5rem;
+  }
+
+  &.is-next {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  &.is-done strong {
+    color: var(--text-secondary);
+  }
+}
+
+.guide__num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.is-done .guide__num {
+  border-color: transparent;
+  background: var(--status-good);
+  color: #fff;
+}

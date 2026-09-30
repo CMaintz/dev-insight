@@ -1,0 +1,52 @@
+@use 'mixins';
+
+.portfolio {
+  gap: 2rem;
+}
+
+.preview {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--status-warning) 12%, var(--surface));
+  font-size: 0.9375rem;
+
+  a {
+    margin-left: 0.25rem;
+  }
+}
+
+.strengths {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+}
+
+.strength {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  @include mixins.panel;
+
+  p {
+    margin: 0.25rem 0 0.5rem;
+  }
+}
+
+.strength__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--status-good);
+  color: #fff;
+  font-weight: 700;
+}
+
+.footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}

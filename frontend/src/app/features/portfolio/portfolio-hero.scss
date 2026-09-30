@@ -1,0 +1,92 @@
+.hero {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius-lg) + 6px);
+  background:
+    radial-gradient(circle at 0% 0%, var(--accent-soft), transparent 55%),
+    radial-gradient(circle at 100% 100%, var(--accent-soft), transparent 45%), var(--surface);
+}
+
+.hero__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  min-width: 0;
+  flex: 1 1 22rem;
+}
+
+.hero__avatar {
+  width: 7rem;
+  height: 7rem;
+  flex: none;
+  border-radius: 50%;
+  border: 4px solid var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+  object-fit: cover;
+}
+
+.hero__avatar--initials {
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.hero__text {
+  min-width: 0;
+  flex: 1 1 16rem;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+}
+
+.hero__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--accent-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hero__login {
+  margin: 0.125rem 0 0;
+  color: var(--text-secondary);
+}
+
+.hero__bio {
+  margin: 0.75rem 0 0;
+  max-width: 40rem;
+  white-space: pre-line;
+}
+
+.hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.hero__scores {
+  flex: 1 1 18rem;
+}
+
+@media (min-width: 48rem) {
+  .hero {
+    padding: 2.5rem;
+  }
+}

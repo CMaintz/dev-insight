@@ -1,0 +1,68 @@
+<div class="page landing">
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="eyebrow">Developer insight, not a static CV</p>
+    <h1 id="hero-title">See how your code evolves.</h1>
+    <p class="lead">
+      DevInsight analyses your GitHub codebases and visualises your development over time —
+      explainable scores for activity, structure and quality, feedback you can act on, and a public
+      portfolio driven by real data.
+    </p>
+    <div class="hero__actions">
+      @if (session.isAuthenticated()) {
+        <a class="btn btn--primary btn--lg" routerLink="/dashboard">Go to your dashboard</a>
+      } @else {
+        <button type="button" class="btn btn--primary btn--lg" (click)="signIn()">
+          <svg class="gh" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          Sign in with GitHub
+        </button>
+      }
+      <a class="btn btn--lg" href="#how" (click)="jumpTo($event, 'how')">How it works</a>
+    </div>
+  </section>
+
+  <section class="dimensions" aria-labelledby="dim-title">
+    <h2 id="dim-title" class="section-title">One score, fully explained</h2>
+    <p class="muted">
+      Every repository gets a 0–100 score built from three weighted dimensions. Each point traces
+      back to a stored metric — no black box.
+    </p>
+    <ul class="grid grid--2 list-reset dims">
+      @for (dim of dimensions; track dim.name) {
+        <li class="card dim">
+          <div class="dim__head">
+            <h3>{{ dim.name }}</h3>
+            <span class="chip">{{ dim.weight }} of overall</span>
+          </div>
+          <p class="muted small">{{ dim.text }}</p>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section id="how" class="how" aria-labelledby="how-title">
+    <h2 id="how-title" class="section-title">How it works</h2>
+    <ol class="steps list-reset">
+      @for (step of steps; track step.title; let i = $index) {
+        <li class="step">
+          <span class="step__num" aria-hidden="true">{{ i + 1 }}</span>
+          <div>
+            <h3>{{ step.title }}</h3>
+            <p class="muted small">{{ step.text }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="scopes card" aria-labelledby="scope-title">
+    <h2 id="scope-title">Whole repository or just you</h2>
+    <p class="muted">
+      Team projects blur who did what. Toggle between the repository as a whole and your own
+      contributions — every chart and score follows.
+    </p>
+  </section>
+</div>

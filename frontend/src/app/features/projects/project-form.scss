@@ -1,0 +1,45 @@
+.form {
+  display: grid;
+  gap: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.image-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.add {
+  justify-self: start;
+}
+
+.repo-list {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  max-height: 14rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.sort {
+  max-width: 12rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

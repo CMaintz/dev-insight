@@ -1,0 +1,10 @@
+plugins = ["typescript", "generic"]
+
+# Tests are not structural-smell-gated: long, mock-heavy specs are normal and fine.
+# CI should police production maintainability, not test structure. (Language-
+# agnostic principle — see README.)
+files = ["src/**/*.ts", "!**/*.spec.ts", "!**/*.test.ts", "!src/testing/**"]
+
+# File-length: flag files over 300 lines (oversized-file) — Foundry's default for cohesive files.
+[sensors.line-count]
+args = ["--max", "300"]

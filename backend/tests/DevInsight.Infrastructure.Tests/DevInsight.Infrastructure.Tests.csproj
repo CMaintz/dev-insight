@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DevInsight.Infrastructure\DevInsight.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

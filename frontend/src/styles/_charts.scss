@@ -1,0 +1,44 @@
+/* ngx-charts chrome: recessive hairline grid, muted axis text, themed tooltips. */
+
+.ngx-charts {
+  text {
+    fill: var(--chart-axis);
+    font-family: var(--font-sans);
+  }
+
+  .gridline-path {
+    stroke: var(--chart-grid);
+    stroke-dasharray: none;
+  }
+
+  .textDataLabel {
+    fill: var(--text-secondary);
+    font-size: 11px;
+  }
+}
+
+.ngx-charts-outer .chart-legend {
+  .legend-labels {
+    background: transparent;
+    white-space: normal;
+  }
+
+  .legend-label {
+    color: var(--text-secondary);
+  }
+
+  .legend-label-text {
+    color: var(--text-secondary);
+  }
+}
+
+body .ngx-charts-tooltip-content.type-tooltip {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+
+  .tooltip-caret {
+    display: none;
+  }
+}
