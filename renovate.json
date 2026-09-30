@@ -9,6 +9,11 @@
   "labels": ["dependencies"],
   "packageRules": [
     {
+      "description": "Supply-chain cooldown: wait a week before proposing a newly published version.",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
       "description": "The CONTRACT says pin everything; Renovate is the update path. Keep Actions pinned to a digest and bump the digest + the trailing # vN comment together.",
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
@@ -24,7 +29,8 @@
       "matchPackageNames": ["*"],
       "isVulnerabilityAlert": true,
       "labels": ["security"],
-      "prPriority": 10
+      "prPriority": 10,
+      "minimumReleaseAge": false
     }
   ],
   "lockFileMaintenance": { "enabled": true },
