@@ -7,7 +7,9 @@ the opposite idea — show *how* someone develops, backed by data they can't fak
 GitHub repositories, measures activity, commit habits, structure and quality, turns those measurements
 into explainable scores and concrete feedback, and publishes the result as a living portfolio.
 
-- **Live:** https://cmaintz.github.io/dev-insight/ (once deployed)
+- **Deployment:** not live yet. The Pages + Azure Container Apps pipeline is in place (`deploy-pages`,
+  `deploy-api`, `infra`) but skips until the Azure resources and `DEVINSIGHT_API_URL` are configured —
+  run it locally for now (see below).
 - **Private dashboard** — scores, activity over time, score evolution, language mix, commit-size
   distribution, and the most important feedback across your repositories.
 - **Explainable analysis** — every score is the weighted sum of stored metrics; the UI shows each
@@ -78,7 +80,7 @@ npm ci && npm start                            # SPA on :4200, proxies /api to :
 
 Open http://localhost:4200, sign in with GitHub, import, analyse, publish.
 
-**Production:** the SPA is on GitHub Pages and the API on Azure Container Apps — see
+**Production (planned):** the SPA targets GitHub Pages and the API Azure Container Apps — see
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) and run `bash scripts/setup-azure.sh` once.
 
 **Everything in one container:** `cp .env.example .env`, fill it in (callback URL
@@ -104,4 +106,4 @@ publish → public portfolio, plus the security cases (forged OAuth state, open 
 
 Implemented: UC1–UC6 from the specification, projects, scheduled snapshots, optional AI feedback.
 Next candidates: GitLab provider, historical score back-fill from commit history, recruiter view,
-CI coverage import. The original Spring Boot skeleton is preserved under the `java-skeleton` git tag.
+CI coverage import. The original Spring Boot skeleton is in the history at commit `cb57e91`.
