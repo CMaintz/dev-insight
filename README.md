@@ -4,6 +4,14 @@ Most developer portfolios are a list of projects and a few adjectives. I wanted 
 
 It started life as a Java/Spring Boot skeleton and I rewrote it on .NET 10 and Angular. Not deployed yet: the GitHub Pages + Azure Container Apps pipeline is in place (`deploy-pages`, `deploy-api`, `infra`) but skips until the Azure resources and `DEVINSIGHT_API_URL` are configured, so run it locally for now (see below).
 
+![Dashboard](docs/screenshots/dashboard.png)
+
+| Why a repository scored what it did | Public portfolio |
+|---|---|
+| ![Repository detail with the per-metric score breakdown](docs/screenshots/repository.png) | ![Public portfolio page](docs/screenshots/portfolio.png) |
+
+The screenshots are from a local run against a made-up demo account (`demo-dev`) with generated repositories and commits, not real GitHub data. AI feedback was off, so all findings are the rule-based ones.
+
 What you get:
 
 - A private dashboard: scores, activity over time, score evolution, language mix, commit-size distribution, and the most important feedback across your repositories.
