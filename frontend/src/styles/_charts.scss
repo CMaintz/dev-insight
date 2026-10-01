@@ -17,21 +17,6 @@
   }
 }
 
-.ngx-charts-outer .chart-legend {
-  .legend-labels {
-    background: transparent;
-    white-space: normal;
-  }
-
-  .legend-label {
-    color: var(--text-secondary);
-  }
-
-  .legend-label-text {
-    color: var(--text-secondary);
-  }
-}
-
 body .ngx-charts-tooltip-content.type-tooltip {
   background: var(--surface-raised);
   color: var(--text-primary);
