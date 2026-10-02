@@ -98,6 +98,7 @@ Each bullet: the choice → the alternative rejected, and why.
 - **Every chart is a `<figure>`** with a heading, a plain-language summary (e.g. "Overall score rose by 12 to 62 …"), the plot marked `aria-hidden`, and a "Show data table" `<details>` twin. Empty states replace the plot with text.
 - **Score evolution needs ≥2 points to draw.** With one snapshot the summary text is shown instead, since a one-point line reads as broken.
 - **Chart chrome is themed through global CSS** (`_charts.scss`: hairline solid gridlines, muted axis text, themed tooltip). ngx-charts takes JS colour arrays, so wrappers pick light/dark arrays from `ThemeService.effective()`.
+- **Line-chart legends are plain HTML below the plot**, not ngx-charts' own legend. With `LegendPosition.Below` ngx-charts sizes the SVG to the full container height and puts the legend underneath it, so the legend spilled out of the fixed-height plot and over the "Show data table" toggle. The wrapper now gives the chart only the space left after the (wrapping) legend. Rejected `LegendPosition.Right`, which ngx-charts does reserve space for, because it takes two of twelve columns of width and squeezes the plot on phones.
 
 ## Foundry structural-smell gate (`habit-hooks --all`)
 

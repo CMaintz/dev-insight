@@ -3,6 +3,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { aDashboard } from '../../../testing/fixtures';
 import { ChartFrame } from './chart-frame';
 import { ActivityChart, CommitSizeChart, LanguagesChart, ScoreEvolutionChart } from './charts';
+import { TimeSeriesChart } from './time-series-chart';
 
 describe('chart widgets', () => {
   beforeEach(() => {
@@ -51,5 +52,28 @@ describe('chart widgets', () => {
     expect(scores.nativeElement.textContent).toContain('No score history yet');
     expect(languages.nativeElement.textContent).toContain('No language data yet.');
     expect(sizes.nativeElement.textContent).toContain('No commits analysed yet.');
+  });
+
+  it('TimeSeriesChart draws its legend outside the measured plot', async () => {
+    const fixture = TestBed.createComponent(TimeSeriesChart);
+    const point = { name: new Date('2026-09-07T00:00:00Z'), value: 50 };
+    fixture.componentRef.setInput('series', [
+      { name: 'Overall', series: [point] },
+      { name: 'Activity', series: [point] },
+    ]);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const items = [...element.querySelectorAll(':scope > .legend li')];
+    expect(items.map((li) => li.textContent?.trim())).toEqual(['Overall', 'Activity']);
+    expect(element.querySelector('.plot .chart-legend, .plot .legend')).toBeNull();
+  });
+
+  it('TimeSeriesChart leaves out the legend for a single series', async () => {
+    const fixture = TestBed.createComponent(TimeSeriesChart);
+    fixture.componentRef.setInput('series', [{ name: 'Commits', series: [] }]);
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.legend')).toBeNull();
   });
 });
