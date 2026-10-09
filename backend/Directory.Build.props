@@ -16,4 +16,15 @@
     <!-- Pin transitive packages listed in Directory.Packages.props too (e.g. EF Core Relational under Npgsql). -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
+  <!-- SonarAnalyzer.CSharp is for the habit-hooks dotnet sensor ONLY, which builds with
+       -p:CodeAnalysisRuleSet=<its ruleset> and ratchets the structural warnings via the snooze
+       baseline. Referencing it unconditionally would flood `typecheck` (`dotnet build
+       -warnaserror`): SonarAnalyzer's default-on rules would be elevated to errors across the
+       existing code. Scoping the reference to builds that pass a CodeAnalysisRuleSet keeps
+       typecheck exactly as strict as before (compiler + built-in CA + NuGetAudit) while the
+       sensor's own build gets the analyzer. PrivateAssets=all keeps it build-time only; the
+       version comes from Directory.Packages.props (CPM). -->
+  <ItemGroup Condition="'$(CodeAnalysisRuleSet)' != ''">
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

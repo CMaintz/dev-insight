@@ -1,19 +1,26 @@
-# There's no habit-hooks .NET sensor yet, so structural analysis comes from Roslyn
-# analyzers in `typecheck` (`dotnet build -warnaserror`). habit-hooks contributes only
-# the language-independent `generic` plugin — file-length (below) and, opt-in, jscpd.
-plugins = ["generic"]
+# The habit-hooks dotnet sensor owns the structural smells (oversized-function,
+# high-complexity, too-many-parameters, oversized-file): it builds DevInsight.slnx with
+# SonarAnalyzer.CSharp active (referenced only for the sensor's build, see
+# ../Directory.Build.props) and ratchets the warnings via the snooze baseline. typecheck
+# (`dotnet build -warnaserror`) keeps compile errors, the built-in CA rules and NuGetAudit.
+# The generic plugin adds file-length (below) and, opt-in, jscpd.
+plugins = ["dotnet", "generic"]
 
-# Tests and generated EF Core migrations are not smell-scanned.
+# Tests and generated EF Core migrations are not smell-scanned; bin/obj hold build output.
 files = ["**/*.cs", "!**/*Tests/**", "!**/*Tests.cs", "!**/*.Test.cs", "!**/Migrations/**", "!**/bin/**", "!**/obj/**"]
 
-# File-length: flag files over 300 lines (oversized-file) — Foundry's default for cohesive files.
+# The backend has one solution (DevInsight.slnx); name it so the sensor's `dotnet build`
+# does not rely on MSBuild's single-file auto-detection.
+[sensors.dotnet-build]
+args = ["DevInsight.slnx"]
+
+# File-length: flag files over 300 lines (oversized-file) - Foundry's default for cohesive files.
 [sensors.line-count]
 args = ["--max", "300"]
 
 # jscpd (the generic plugin's duplication detector) is a Node CLI. Disabled by default so
-# the habits job stays Node-free (it runs only the pure-Python line-count). To turn on C#
-# duplication detection: install Node + `npm i -g jscpd` in the smells job, copy
-# ../jscpd.json to <repo>/.jscpd.json (jscpd ignores the `files` list above), delete this
-# block, then re-seed the snooze baseline.
+# the habits job stays Node-free (the dotnet sensor uses the .NET SDK, the line-count is pure
+# Python). To turn on C# duplication detection: install Node + `npm i -g jscpd` in the smells
+# job, copy ../jscpd.json to <repo>/.jscpd.json, delete this block, then re-seed the baseline.
 [sensors.jscpd]
 disabled = true

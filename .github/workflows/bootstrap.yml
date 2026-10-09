@@ -6,16 +6,16 @@ on:
     - cron: '0 6 * * *'
 jobs:
   backend:
-    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@2112a422a905c329602701d7a0a40fbdb5b91a19 # v2.5.1
+    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
     secrets:
       app_private_key: ${{ secrets.BOOTSTRAP_APP_PRIVATE_KEY }}
     with:
       working_directory: backend
-      habit_hooks_plugin: habit-hooks-generic
+      habit_hooks_plugin: foundry-habit-hooks-dotnet
       app_client_id: ${{ vars.BOOTSTRAP_APP_CLIENT_ID }}
     permissions: { contents: write, pull-requests: write }
   frontend:
-    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@2112a422a905c329602701d7a0a40fbdb5b91a19 # v2.5.1
+    uses: CMaintz/foundry/.github/workflows/bootstrap.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
     secrets:
       app_private_key: ${{ secrets.BOOTSTRAP_APP_PRIVATE_KEY }}
     with:
