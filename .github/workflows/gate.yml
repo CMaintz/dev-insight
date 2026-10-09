@@ -1,5 +1,5 @@
 # Foundry gate (https://github.com/CMaintz/foundry): the same six verbs as `mise run gate`, per package.
-# Pinned to Foundry v2.9.0. Require both `gate-ok` checks in branch protection.
+# Pinned to Foundry v2.10.0. Require both `gate-ok` checks in branch protection.
 name: gate
 on: { pull_request: {}, push: { branches: [main] } }
 concurrency:
@@ -8,15 +8,15 @@ concurrency:
 permissions: { contents: read }
 jobs:
   backend:
-    uses: CMaintz/foundry/.github/workflows/gate.yml@bc980e81bda32af3ef04b8149badf9529c3e6e84 # v2.9.0
+    uses: CMaintz/foundry/.github/workflows/gate.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
     with:
       stack: dotnet
       working_directory: backend
-      # The dotnet structural-smell sensor (the stack default at v2.9.0, set explicitly for
+      # The dotnet structural-smell sensor (the stack default at v2.10.0, set explicitly for
       # clarity). The gate job and the backstop job both build it with the .NET SDK + venv.
       habit_hooks_plugin: foundry-habit-hooks-dotnet
   frontend:
-    uses: CMaintz/foundry/.github/workflows/gate.yml@bc980e81bda32af3ef04b8149badf9529c3e6e84 # v2.9.0
+    uses: CMaintz/foundry/.github/workflows/gate.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
     with:
       stack: ts
       working_directory: frontend
