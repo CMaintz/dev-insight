@@ -8,7 +8,7 @@ concurrency:
 permissions: { contents: read }
 jobs:
   backend:
-    uses: CMaintz/foundry/.github/workflows/gate.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
+    uses: CMaintz/foundry/.github/workflows/gate.yml@0b0275720481eb4c064562dc65b85d292204398a # v2.11.0
     with:
       stack: dotnet
       working_directory: backend
@@ -16,7 +16,7 @@ jobs:
       # clarity). The gate job and the backstop job both build it with the .NET SDK + venv.
       habit_hooks_plugin: foundry-habit-hooks-dotnet
   frontend:
-    uses: CMaintz/foundry/.github/workflows/gate.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2.10.0
+    uses: CMaintz/foundry/.github/workflows/gate.yml@0b0275720481eb4c064562dc65b85d292204398a # v2.11.0
     with:
       stack: ts
       working_directory: frontend
