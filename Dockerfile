@@ -3,7 +3,7 @@
 # cookie stays first-party and no CORS configuration is needed.
 
 # --- Frontend -----------------------------------------------------------------------
-FROM node:24.21.0-alpine AS web
+FROM node:24.22.0-alpine AS web
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -11,7 +11,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # --- Backend ------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0.401 AS api
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402 AS api
 WORKDIR /src/backend
 COPY backend/global.json backend/Directory.Build.props backend/Directory.Packages.props backend/DevInsight.slnx ./
 COPY backend/src/ src/
