@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>CMaintz/foundry//presets/renovate"]
+  "extends": ["local>CMaintz/foundry//presets/renovate"],
+  "packageRules": [
+    {
+      "description": "Roslyn is pinned only to match the exact version Microsoft.EntityFrameworkCore.Design depends on (CPM transitive pinning); bumping it alone breaks restore with NU1107. Move it by hand with EF Core.",
+      "matchPackageNames": ["Microsoft.CodeAnalysis.CSharp"],
+      "enabled": false
+    }
+  ]
 }
