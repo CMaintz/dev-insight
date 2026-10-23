@@ -66,7 +66,7 @@ Prerequisites: [mise](https://mise.jdx.dev) (installs the pinned .NET SDK and No
 `http://localhost:4200/api/auth/github/callback`.
 
 ```bash
-mise install                                   # .NET 10.0.401 + Node 24.21.0
+mise install                                   # .NET 10.0.402 + Node 24.21.0
 docker compose up -d db                        # PostgreSQL on :5432
 
 cd backend

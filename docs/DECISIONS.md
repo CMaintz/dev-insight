@@ -24,7 +24,7 @@ Legend: 🧭 product/feature · 🏗 architecture · 🧰 technology · 🔒 sec
 
 ## Stack
 
-7. 🧰 **.NET 10 (LTS, SDK 10.0.401) / C# 14**, installed per-project via mise (`mise.toml`, `global.json`).
+7. 🧰 **.NET 10 (LTS, SDK 10.0.402) / C# 14**, installed per-project via mise (`mise.toml`, `global.json`).
    *Alt:* .NET 9 (installed on your machine, but STS and out of support in 2026). *Why:* LTS, current.
 8. 🧰 **Angular 22 (standalone, signals, zoneless, Vitest)** kept as the frontend. *Alt:* Blazor.
    *Why:* your TypeScript skills, the job market pairs ASP.NET Core + Angular often, and Blazor WASM
