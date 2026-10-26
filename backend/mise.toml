@@ -2,7 +2,7 @@
 # Callers run verbs (`mise run gate`), never the tools directly.
 
 [tools]
-dotnet = "10.0.401"
+dotnet = "10.0.402"
 
 [env]
 # habit-hooks (the structural-smell detector) is a pinned, mise-managed pip tool, provisioned
