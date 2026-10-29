@@ -17,7 +17,7 @@ HABIT_HOOKS_PLUGIN = "foundry-habit-hooks-dotnet"
 # The Foundry gate script (foundry-verb-wrap) is provisioned by setup:foundry-scripts into a
 # cache dir at this ref, not vendored (see that task). Renovate tracks the pin via the comment.
 # renovate: datasource=github-tags depName=CMaintz/foundry
-FOUNDRY_SCRIPTS_REF = "v2.12.0"
+FOUNDRY_SCRIPTS_REF = "v2.13.0"
 # The foundry-scripts cache first (so `gate` runs `foundry-verb-wrap` by name); then the repo's
 # own scripts/ (foundry-loop-report, ruleset_guard.py, setup-azure.sh); then the habit-hooks
 # venv bin (Linux `bin/`, Windows `Scripts/` - the absent one is ignored) so `smells` finds the
