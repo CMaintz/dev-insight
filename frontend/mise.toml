@@ -5,8 +5,48 @@
 node = "24.22.0"
 
 [env]
-_.path = ["./node_modules/.bin", "{{config_root}}/../scripts"]
+# The Foundry gate script (foundry-verb-wrap) is provisioned by setup:foundry-scripts into a
+# cache dir at this ref, not vendored (see that task). Renovate tracks the pin via the comment.
+# renovate: datasource=github-tags depName=CMaintz/foundry
+FOUNDRY_SCRIPTS_REF = "v2.12.0"
+# Local binaries, then the foundry-scripts cache (so `gate` runs `foundry-verb-wrap` by name),
+# then the repo's own scripts/ (foundry-loop-report, ruleset_guard.py, setup-azure.sh).
+_.path = [
+    "./node_modules/.bin",
+    "{{env.HOME}}/.local/opt/foundry-scripts-{{env.FOUNDRY_SCRIPTS_REF}}",
+    "{{config_root}}/../scripts",
+]
 FOUNDRY_TELEMETRY = "{{config_root}}/../.foundry/telemetry.jsonl"
+
+[hooks]
+# Provision the cached Foundry gate script on `mise install` (local and CI alike).
+postinstall = "mise run setup:foundry-scripts"
+
+# Fetch the pinned Foundry gate script into a cache dir, rather than vendoring a copy into
+# the repo (agent/CI plumbing, not the repo's code; a vendored copy drifts and needs a
+# re-sync on every bump). Pinned to FOUNDRY_SCRIPTS_REF, provisioned once via postinstall.
+# Offline-safe: no network call when every script is already cached at this ref, so the
+# gate hot path never depends on the network; a ref bump needs the network once.
+[tasks."setup:foundry-scripts"]
+description = "Fetch the pinned Foundry gate script into a cache dir (de-vendored)"
+run = '''
+set -eu
+dst="$HOME/.local/opt/foundry-scripts-$FOUNDRY_SCRIPTS_REF"
+scripts="foundry-verb-wrap"
+need=""
+for s in $scripts; do [ -f "$dst/$s" ] || need="$need $s"; done
+[ -z "$need" ] && exit 0
+mkdir -p "$dst"
+base="https://raw.githubusercontent.com/CMaintz/foundry/$FOUNDRY_SCRIPTS_REF/scripts"
+for s in $need; do
+  if ! curl -fsSL "$base/$s" -o "$dst/$s.part"; then
+    echo "setup:foundry-scripts: cannot fetch $s at $FOUNDRY_SCRIPTS_REF (network needed once per ref)" >&2
+    rm -f "$dst/$s.part"; exit 1
+  fi
+  mv "$dst/$s.part" "$dst/$s"
+  chmod +x "$dst/$s" 2>/dev/null || true
+done
+'''
 
 [tasks.fix]
 description = "Prettier + eslint --fix"
@@ -30,6 +70,10 @@ run = "npm audit --audit-level=low"
 
 [tasks.gate]
 description = "The oracle: lint -> typecheck -> test -> audit, sequentially."
+# The setup:foundry-scripts dep provisions the cached gate script first (idempotent) - it
+# matters for a local root `mise run gate`, where a root `mise install` never fires this
+# package's postinstall. The verbs stay sequential (never `depends`, which mise runs in parallel).
+depends = ["setup:foundry-scripts"]
 run = [
     "foundry-verb-wrap lint      -- mise run lint",
     "foundry-verb-wrap typecheck -- mise run typecheck",
