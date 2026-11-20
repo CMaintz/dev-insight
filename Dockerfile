@@ -18,7 +18,7 @@ COPY backend/src/ src/
 RUN dotnet publish src/DevInsight.Api/DevInsight.Api.csproj -c Release -o /app/publish -p:UseAppHost=false
 
 # --- Runtime ------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 # The analysis engine clones repositories with the git CLI.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
